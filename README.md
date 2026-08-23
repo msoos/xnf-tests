@@ -22,35 +22,11 @@ the code that reproduces them.
 | [xnfSAT](https://github.com/Vtec234/xnfsat) | XNF | stochastic local search with native XOR support |
 | [Bosphorus](https://github.com/meelgroup/bosphorus) | ANF | algebraic (XL, ElimLin) plus logical reasoning |
 
-## Getting the code
 
-Everything external is a submodule, and several of them have submodules of their own, so
-the recursive flag is not optional:
+## CryptoMiniSat changes needed for these benchmarks
 
-```bash
-git clone https://github.com/msoos/xnf-tests
-cd xnf-tests
-git submodule update --init --recursive
-```
-
-## Building
-
-```bash
-(cd cryptominisat && mkdir -p build && cd build && cmake .. && make -j$(nproc))
-(cd xorcle && make -j$(nproc))
-(cd Xorricane && cmake . && make xorricane -j$(nproc))
-(cd xnfsat && ./configure.sh && make -j$(nproc))
-(cd xnfsat/cnf2xnf && ./configure && make -j$(nproc))
-(cd bosphorus && mkdir -p build && cd build && cmake .. && make -j$(nproc))
-```
-
-The runner scripts look for each binary at its default in-tree location; pass
-`--cms`, `--xorcle`, `--xorricane`, `--xnfsat` or `--bosphorus` to point elsewhere.
-
-## CryptoMiniSat changes this work required
-
-CryptoMiniSat could not run some of these families as it stood. Three commits in the pinned
-submodule were needed, and the results here depend on them:
+CryptoMiniSat could not efficiently run some of these families. These changes were
+necessary for proper performance:
 
 | Commit | Change | Needed for |
 |---|---|---|
@@ -58,6 +34,7 @@ submodule were needed, and the results here depend on them:
 | [`bef479cef`](https://github.com/msoos/cryptominisat/commit/bef479cef) | avoid O(num_matrices) per-literal work in Gauss-Jordan elimination | lifted pebbling, matrix multiplication |
 | [`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) | raise `MAX_XOR_RECOVER_SIZE` from 8 to 12 | Tseitin at k = 9, 10 |
 | [`14f689a14`](https://github.com/msoos/cryptominisat/commit/14f689a14) | library setters for the matrix limits and startup simplification | Bosphorus, which drives CryptoMiniSat as a library |
+
 
 **Many matrices.** Two families build far more Gauss-Jordan matrices than anything CryptoMiniSat
 had been exercised on. Counting the largest number held at once per instance:
@@ -102,7 +79,7 @@ k = 9 and k = 10 unreachable at any setting. With the ceiling raised and `--maxx
 in `run_all.sh`, CryptoMiniSat recovers 9- and 10-wide constraints and solves all 75 instances;
 before, it solved 60 and timed out on every k ≥ 8 instance.
 
-### Bosphorus needed the same treatment
+### Bosphorus changes needed for these benchmarks
 
 Bosphorus uses CryptoMiniSat as a library rather than a binary, so none of the command-line
 options above reach it. It was given the same configuration through the API by
@@ -118,9 +95,30 @@ solver.set_min_matrix_rows(1);
 solver.set_simplify_at_startup(1);
 ```
 
-Three of those setters did not exist before `14f689a14` in CryptoMiniSat, committed the same day.
-Without `--solve-xnf` Bosphorus runs its embedded CryptoMiniSat on the defaults, with the same
-consequences described above.
+## Getting the code
+
+Everything external is a submodule, and several of them have submodules of their own, so
+the recursive flag is not optional:
+
+```bash
+git clone https://github.com/msoos/xnf-tests
+cd xnf-tests
+git submodule update --init --recursive
+```
+
+## Building
+
+```bash
+(cd cryptominisat && mkdir -p build && cd build && cmake .. && make -j$(nproc))
+(cd xorcle && make -j$(nproc))
+(cd Xorricane && cmake . && make xorricane -j$(nproc))
+(cd xnfsat && ./configure.sh && make -j$(nproc))
+(cd xnfsat/cnf2xnf && ./configure && make -j$(nproc))
+(cd bosphorus && mkdir -p build && cd build && cmake .. && make -j$(nproc))
+```
+
+The runner scripts look for each binary at its default in-tree location; pass
+`--cms`, `--xorcle`, `--xorricane`, `--xnfsat` or `--bosphorus` to point elsewhere.
 
 ## Getting the benchmarks
 
