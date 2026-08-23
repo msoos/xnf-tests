@@ -9,8 +9,6 @@
 | [Conflict-Driven SAT Solving using XOR-OR-AND Normal Forms](https://dl.acm.org/doi/epdf/10.1613/jair.1.20298) | Danner, Kreuzer (Passau) | JAIR 86:46, 2026 | Xorricane | [j-danner/Xorricane-paper](https://github.com/j-danner/Xorricane-paper) |
 | [Extending CDCL to disjunctions of parity equations](https://arxiv.org/pdf/2605.15002) | Beame, Sun (U. Washington) | 2026 | Xorcle | [glenn-sun/xorcle](https://github.com/glenn-sun/xorcle) |
 
-The PDFs are committed here so the benchmark definitions and claimed results stay next to
-the code that reproduces them.
 
 ## The solvers
 
