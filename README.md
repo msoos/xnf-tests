@@ -164,9 +164,6 @@ single solver — clone, then run the three commands under [The report](#the-rep
 are there for anything the database does not capture: conflict counts, XOR recovery
 statistics, Gauss-Jordan matrix dimensions, restart behaviour.
 
-Almost all of the bulk is CryptoMiniSat's per-restart and per-Gauss-call progress lines,
-which is why the archive compresses 22-fold.
-
 ## The other scripts
 
 | Script | Purpose |
