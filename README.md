@@ -57,6 +57,7 @@ submodule were needed, and the results here depend on them:
 | [`068a3fd79`](https://github.com/msoos/cryptominisat/commit/068a3fd79) | fix crash when `--maxnummatrices` exceeds 1000 | lifted pebbling, matrix multiplication |
 | [`bef479cef`](https://github.com/msoos/cryptominisat/commit/bef479cef) | avoid O(num_matrices) per-literal work in Gauss-Jordan elimination | lifted pebbling, matrix multiplication |
 | [`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) | raise `MAX_XOR_RECOVER_SIZE` from 8 to 12 | Tseitin at k = 9, 10 |
+| [`14f689a14`](https://github.com/msoos/cryptominisat/commit/14f689a14) | library setters for the matrix limits and startup simplification | Bosphorus, which drives CryptoMiniSat as a library |
 
 **Many matrices.** Two families build far more Gauss-Jordan matrices than anything CryptoMiniSat
 had been exercised on. Counting the largest number held at once per instance:
@@ -100,6 +101,26 @@ default is `--maxxorsize 7`, but the compile-time ceiling `MAX_XOR_RECOVER_SIZE`
 k = 9 and k = 10 unreachable at any setting. With the ceiling raised and `--maxxorsize 12` passed
 in `run_all.sh`, CryptoMiniSat recovers 9- and 10-wide constraints and solves all 75 instances;
 before, it solved 60 and timed out on every k ≥ 8 instance.
+
+### Bosphorus needed the same treatment
+
+Bosphorus uses CryptoMiniSat as a library rather than a binary, so none of the command-line
+options above reach it. It was given the same configuration through the API by
+[`a5dddab`](https://github.com/meelgroup/bosphorus/commit/a5dddab), which adds the `--solve-xnf`
+flag that `run_all_bosphorus.py` passes:
+
+```cpp
+solver.set_sls(0);
+solver.set_find_xors(true);
+solver.set_allow_otf_gauss();
+solver.set_max_num_matrices(1000000);
+solver.set_min_matrix_rows(1);
+solver.set_simplify_at_startup(1);
+```
+
+Three of those setters did not exist before `14f689a14` in CryptoMiniSat, committed the same day.
+Without `--solve-xnf` Bosphorus runs its embedded CryptoMiniSat on the defaults, with the same
+consequences described above.
 
 ## Getting the benchmarks
 
