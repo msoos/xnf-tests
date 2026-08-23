@@ -47,6 +47,37 @@ git submodule update --init --recursive
 The runner scripts look for each binary at its default in-tree location; pass
 `--cms`, `--xorcle`, `--xorricane`, `--xnfsat` or `--bosphorus` to point elsewhere.
 
+## CryptoMiniSat changes this work required
+
+CryptoMiniSat could not run some of these families as it stood. Three commits in the pinned
+submodule were needed, and the results here depend on them:
+
+| Commit | Change | Needed for |
+|---|---|---|
+| [`068a3fd79`](https://github.com/msoos/cryptominisat/commit/068a3fd79) | fix crash when `--maxnummatrices` exceeds 1000 | lifted pebbling, matrix multiplication |
+| [`bef479cef`](https://github.com/msoos/cryptominisat/commit/bef479cef) | avoid O(num_matrices) per-literal work in Gauss-Jordan elimination | lifted pebbling, matrix multiplication |
+| [`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) | raise `MAX_XOR_RECOVER_SIZE` from 8 to 12 | Tseitin at k = 9, 10 |
+
+**Many matrices.** Two families build far more Gauss-Jordan matrices than anything CryptoMiniSat
+had been exercised on. Counting the largest number held at once per instance:
+
+| Family | Max matrices | Instances over 20 |
+|---|---|---|
+| lifted pebbling | 11476 | 40/40 |
+| matrix multiplication | 737 | 10/10 |
+| everything else | ≤ 12 | 0 |
+
+At those counts the old code crashed outright above 1000 matrices, and the per-literal work in
+propagation was linear in the number of matrices — quadratic overall. Both had to be fixed before
+the pebbling family would run at all.
+
+**Wide XOR constraints.** A Tseitin formula on a k-regular graph has one parity constraint of
+degree exactly k per vertex, so recovering them needs a size limit of at least k. The runtime
+default is `--maxxorsize 7`, but the compile-time ceiling `MAX_XOR_RECOVER_SIZE` was 8, which made
+k = 9 and k = 10 unreachable at any setting. With the ceiling raised and `--maxxorsize 12` passed
+in `run_all.sh`, CryptoMiniSat recovers 9- and 10-wide constraints and solves all 75 instances;
+before, it solved 60 and timed out on every k ≥ 8 instance.
+
 ## Getting the benchmarks
 
 None of the instance files are committed — they are generated or downloaded from the
