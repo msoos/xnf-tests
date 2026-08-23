@@ -71,6 +71,29 @@ At those counts the old code crashed outright above 1000 matrices, and the per-l
 propagation was linear in the number of matrices — quadratic overall. Both had to be fixed before
 the pebbling family would run at all.
 
+**The options matter as much as the code.** On benchmarks where XOR constraints dominate,
+CryptoMiniSat's defaults are tuned for general CNF and discard almost all of the linear structure
+before search begins. `run_all_cms.py` therefore runs it as:
+
+```
+--sls 0 --autodisablegauss 0 --presimp 1 --maxmatrixrows 100000 --maxmatrixcols 100000
+--maxnummatrices 1000000 --minmatrixrows 1 --maxxorsize 12
+```
+
+| Option | Default | Why |
+|---|---|---|
+| `--maxnummatrices 1000000` | 5 | pebbling needs 11476 matrices; the default keeps 5 and drops the rest |
+| `--maxmatrixrows 100000` | 2000 | one bivium matrix is 10809 rows; the default discards it |
+| `--maxmatrixcols 100000` | 1000 | the same matrix is 11190 columns wide |
+| `--minmatrixrows 1` | 3 | keeps the many tiny matrices that lifted pebbling produces |
+| `--autodisablegauss 0` | on | stops Gauss-Jordan being switched off mid-run on a usefulness heuristic |
+| `--maxxorsize 12` | 7 | Tseitin at k = 8, 9, 10 has constraints that wide |
+| `--presimp 1` | off | XOR recovery happens during simplification, so it must run before search |
+| `--sls 0` | on | local search cannot use the XOR structure and only costs time here |
+
+Without these, most of the recovered XORs never reach a matrix and the comparison measures
+CryptoMiniSat's CNF path rather than its CNF-XOR one.
+
 **Wide XOR constraints.** A Tseitin formula on a k-regular graph has one parity constraint of
 degree exactly k per vertex, so recovering them needs a size limit of at least k. The runtime
 default is `--maxxorsize 7`, but the compile-time ceiling `MAX_XOR_RECOVER_SIZE` was 8, which made
