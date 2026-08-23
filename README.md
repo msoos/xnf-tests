@@ -160,7 +160,7 @@ logs into `backup/`, keeping the directory structure.
 
 `get_data_to_sqlite.py` parses every log into `data.sqlite`, one row per solver-instance
 pair with wall clock, CPU time, peak RSS, exit status and result. `create_graphs.py` writes
-cactus plots and PAR2 tables into `pics/` as PNG, PDF and SVG, alongside the CSV data behind
+CDF plots and PAR2 tables into `pics/` as PNG, PDF and SVG, alongside the CSV data behind
 each curve. `make_report.py` assembles **`report.html`**: a single self-contained page
 covering what was run, how each benchmark family was generated, which encoding each solver
 saw, the plots, the PAR2 tables and the caveats.

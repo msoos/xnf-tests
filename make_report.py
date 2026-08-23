@@ -33,8 +33,7 @@ TIMEOUT_FLAGS = {"-t", "--time-out", "--maxtime"}
 FAMILY_NOTES = {
     "tseitin_n_k": ("Tseitin formulas in CNF",
         "Unsatisfiable parity formulas on random k-regular n-vertex graphs, generated with "
-        "<code>cnfgen</code> via <code>xorcle/tools/generate_xnf_tests.py --families tseitin_n_k</code>. "
-        "Grid: (20,k) for k=3..10 and (n,4) for n=10,20,...,1280, five graphs each. "
+        "<code>cnfgen</code>. Grid: (20,k) for k=3..10 and (n,4) for n=10,20,...,1280, five graphs each. "
         "Provably hard for Resolution; the headline family of the Xorcle paper."),
     "pebbling_lifted_h_k": ("Pebbling formulas lifted by k-XORs",
         "Pebbling formulas on pyramid graphs of height h=60..150, each variable replaced by the "
@@ -254,7 +253,6 @@ def main():
     P.append('<nav><strong>Contents</strong><ul>')
     for anchor, title in [("solvers", "Solvers"), ("benchmarks", "Benchmarks"),
                           ("encodings", "Encodings and conversion"),
-                          ("running", "How the runs were made"),
                           ("overall", "Overall results"), ("families", "Per-family results"),
                           ("caveats", "Caveats")]:
         P.append(f'<li><a href="#{anchor}">{e(title)}</a></li>')
@@ -280,7 +278,7 @@ Conversions were done with these tools:</p>
 <tr><td><code>.xcnf</code> / <code>.cnf-xor</code></td><td>CNF-XOR</td>
     <td>shipped, or <code>xnf_to_xcnf.py</code></td></tr>
 <tr><td><code>.2xcnf</code></td><td>CNF-XOR built from the 2-XNF</td>
-    <td><code>xnf_to_xcnf.py --suffix .2xcnf</code></td></tr>
+    <td><code>xnf_to_xcnf.py</code></td></tr>
 <tr><td><code>.xnf</code></td><td>XNF, <code>+</code> linerals</td><td>shipped, or <code>cnf2xnf</code></td></tr>
 <tr><td><code>.2xnf</code></td><td>2-XNF, at most two linerals per clause</td>
     <td>shipped with the benchmark</td></tr>
@@ -288,13 +286,11 @@ Conversions were done with these tools:</p>
     <td><code>xcnf_to_xnf.py</code></td></tr>
 <tr><td><code>.anf</code></td><td>algebraic normal form</td><td>shipped with the benchmark</td></tr>
 </tbody></table>
-<p><code>xnf_to_xcnf.py</code> reproduces the CNF-XOR encoding used by the Xorricane paper: unit XNF
-clauses become XOR clauses directly, single-literal linerals are inlined, and every other lineral
-gets one fresh variable defined as its negation. Validated against all 200 shipped
-<code>.xcnf</code> files &mdash; variable, clause and xor-line counts match exactly.</p>
-<p>For the matrix-multiplication instances only CNF is published, so XNF was recovered with Armin
-Biere's <code>cnf2xnf</code> extractor (729 XORs per instance), then rewritten to linerals with
-<code>xcnf_to_xnf.py</code> for Xorcle, which cannot parse <code>x</code>-lines.</p>
+<p>The CNF-XOR encodings a benchmark does not ship were generated to match the one the Xorricane
+paper uses, and reproduce all 200 shipped <code>.xcnf</code> files exactly &mdash; variable, clause
+and xor-line counts all agree. For the matrix-multiplication instances only CNF is published, so
+the XNF was recovered from it with Armin Biere's <code>cnf2xnf</code> extractor, which finds 729
+XOR constraints per instance.</p>
 <h3>Why CryptoMiniSat does best on the plain CNF</h3>
 <p>The plain CNF is the largest input by far, yet it is the one CryptoMiniSat solves. The reason is
 that it preserves the cipher's native short XOR constraints. Bivium's update function is a handful
@@ -322,31 +318,19 @@ solves. What matters here is XOR sparsity, not formula size: the 8468-variable C
 3544-variable CNF-XOR precisely because its recovered constraints are shorter.</p>
 
 <p>CryptoMiniSat is given up to three encodings of the Xorricane-paper families. Besides the
-shipped CNF-XOR and the plain CNF, <code>.2xcnf</code> applies the same conversion to the
-<em>2-XNF</em> file rather than the XNF one &mdash; the encoding behind the paper's best-performing
+shipped CNF-XOR and the plain CNF, <code>.2xcnf</code> is built from the <em>2-XNF</em> file
+rather than the XNF one &mdash; the encoding behind the paper's best-performing
 CryptoMiniSat configuration. It sits between the other two in size: on Bivium, 5314 variables
 against 2128 for the shipped CNF-XOR and 25766 for the blasted CNF, with the XOR constraints
 given explicitly rather than left to be recovered during preprocessing.</p>""")
 
-    P.append('<h2 id="running">How the runs were made</h2>')
-    P.append(f"""
-<p>Every run went through <code>run_all_&lt;solver&gt;.py</code>, which wraps the solver in
-<code>/usr/bin/time -v</code> and <code>timeout -k 10</code>, writing
-<code>&lt;file&gt;.out-&lt;solver&gt;</code> and <code>&lt;file&gt;.timeout-&lt;solver&gt;</code>
-beside each instance. Results were parsed into <code>{DB}</code> by
-<code>get_data_to_sqlite.py</code> (one row per solver-instance pair, with wall clock, CPU time,
-peak RSS, exit status and signal), and plotted by <code>create_graphs.py</code>.</p>
-<pre><code>./get_data_to_sqlite.py     # logs  -> {DB}
-./create_graphs.py          # {DB} -> {PICS}/
-./make_report.py            # -> {OUT}</code></pre>
-<p><strong>PAR2</strong> is the SAT-competition penalised average runtime: the mean over attempted
-instances of the solve time, with unsolved instances charged twice the timeout. Lower is better.
-The <em>attempted</em> column makes the denominator explicit, since not every solver ran on every
-family.</p>""")
-
-    combined_svg = os.path.join(PICS, "cactus_all.svg")
+    combined_svg = os.path.join(PICS, "cdf_all.svg")
     P.append('<h2 id="overall">Overall results</h2>')
-    P.append("<p>Cactus plot over all families. Bosphorus and xnfSAT are excluded here because "
+    P.append("<p><strong>PAR2</strong> is the SAT-competition penalised average runtime: the mean "
+             "over attempted instances of the solve time, with unsolved instances charged twice "
+             "the timeout. Lower is better. The <em>attempted</em> column makes the denominator "
+             "explicit, since not every solver ran on every family.</p>")
+    P.append("<p>CDF of solving time over all families. Bosphorus and xnfSAT are excluded here because "
              "neither was run on every family &mdash; Bosphorus only on the Ascon and "
              "Xorricane-paper suites, xnfSAT only on the matrix-multiplication instances, and the "
              "XOR-detection-off CryptoMiniSat configuration only on Bivium. "
@@ -355,12 +339,12 @@ family.</p>""")
              "only encoding elsewhere. Both cover all 1705 instances.</p>")
     if os.path.exists(combined_svg):
         P.append(f"<figure>{inline_svg(combined_svg, 'all')}</figure>")
-    P.append(par2_table(read_par2(os.path.join(PICS, "cactus_all_par2.csv"))))
+    P.append(par2_table(read_par2(os.path.join(PICS, "cdf_all_par2.csv"))))
 
     P.append('<h2 id="families">Per-family results</h2>')
     for fam in families:
-        svg = os.path.join(PICS, f"cactus_{fam}.svg")
-        par2 = read_par2(os.path.join(PICS, f"cactus_{fam}_par2.csv"))
+        svg = os.path.join(PICS, f"cdf_{fam}.svg")
+        par2 = read_par2(os.path.join(PICS, f"cdf_{fam}_par2.csv"))
         label = FAMILY_NOTES.get(fam, (fam, ""))[0]
         P.append(f'<h3 id="f_{e(fam)}">{e(fam)} &mdash; {e(label)}</h3>')
         if os.path.exists(svg):

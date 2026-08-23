@@ -1,5 +1,5 @@
 #!/bin/python3
-"""Cactus plots from data.sqlite into pics/: ./create_graphs.py [--family F]"""
+"""CDF plots from data.sqlite into pics/: ./create_graphs.py [--family F]"""
 
 import argparse
 import base64
@@ -260,7 +260,7 @@ def make_plot(con, name, title, family, combined, exclude, verbose):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Generate cactus plots from " + DB)
+    ap = argparse.ArgumentParser(description="Generate CDF plots from " + DB)
     ap.add_argument("--family", action="append", default=[], help="only these families")
     ap.add_argument("--no-display", action="store_true", help="do not print PNGs inline")
     ap.add_argument("-v", "--verbose", action="store_true")
@@ -278,9 +278,9 @@ def main():
         families = [f for f in families if f in args.family]
 
     todo = [] if args.family else [
-        ("cactus_all", "All benchmarks (bosphorus, xnfsat, cms-noxor excluded: not run everywhere)",
+        ("cdf_all", "All benchmarks (bosphorus, xnfsat, cms-noxor excluded: not run everywhere)",
          None, True, {"bosphorus", "xnfsat", "cms-noxor"})]
-    todo += [(f"cactus_{f}", f, f, False, set()) for f in families]
+    todo += [(f"cdf_{f}", f, f, False, set()) for f in families]
 
     for name, title, family, combined, exclude in todo:
         res = make_plot(con, name, title, family, combined, exclude, args.verbose)
