@@ -1,16 +1,5 @@
 # Reproducing the XNF solver evaluations
 
-XNF — *XOR-OR-AND normal form* — generalises CNF by letting each literal be a XOR of
-literals (a *lineral*), so a clause is a disjunction of parity equations. Several papers
-have proposed solvers for it, each with its own benchmark suite and its own comparison
-against CNF and CNF-XOR solvers.
-
-This repository puts all of those evaluations on one machine, one set of benchmarks and one
-harness, so the results can be compared directly rather than across four papers with four
-different setups. It runs five solvers over roughly 1700 instances in fourteen families,
-collects every run into a SQLite database, and produces cactus plots, PAR2 tables and a
-single self-contained HTML report.
-
 ## The papers
 
 | Paper | Authors | Venue / year | Solver | Code |
@@ -60,7 +49,8 @@ The runner scripts look for each binary at its default in-tree location; pass
 
 ## Getting the benchmarks
 
-None of the instance files are committed — they are generated or downloaded.
+None of the instance files are committed — they are generated or downloaded from the
+original sources, as per the papers' definitions.
 
 **Xorcle's synthetic families** (Tseitin, lifted pebbling, random and restricted k-XNF) are
 generated from the paper's parameters. Needs `cnfgen` and `networkx`:
