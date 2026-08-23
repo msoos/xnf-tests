@@ -265,6 +265,29 @@ def main():
              "with native XOR support; Bosphorus combines algebraic and logical reasoning over "
              "ANF.</p>")
     P.append(solver_table(con))
+    P.append("""
+<h3>What CryptoMiniSat needed</h3>
+<p>CryptoMiniSat's defaults are tuned for general CNF, and on these families they discard almost
+all of the linear structure before search begins: <code>--maxnummatrices</code> defaults to 5 where
+lifted pebbling builds 11476 simultaneous matrices, and <code>--maxmatrixrows</code> defaults to
+2000 where a single Bivium matrix is 10809 rows. The command line above lifts those cutoffs, which
+is what makes this a measurement of the CNF-XOR path rather than the plain CNF one.</p>
+<p>Lifting them was not enough on its own &mdash; the solver had not been run in that regime before,
+and three changes were required. All are in the pinned revision used here:</p>
+<table><thead><tr><th>Commit</th><th>Change</th><th>Needed for</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/msoos/cryptominisat/commit/068a3fd79"><code>068a3fd79</code></a></td>
+    <td>fix crash when <code>--maxnummatrices</code> exceeds 1000</td>
+    <td>lifted pebbling, matrix multiplication</td></tr>
+<tr><td><a href="https://github.com/msoos/cryptominisat/commit/bef479cef"><code>bef479cef</code></a></td>
+    <td>avoid O(num_matrices) per-literal work in Gauss-Jordan elimination</td>
+    <td>lifted pebbling, matrix multiplication</td></tr>
+<tr><td><a href="https://github.com/msoos/cryptominisat/commit/3970aaf24"><code>3970aaf24</code></a></td>
+    <td>raise <code>MAX_XOR_RECOVER_SIZE</code> from 8 to 12</td>
+    <td>Tseitin at k = 9, 10</td></tr>
+</tbody></table>
+<p>The last one mattered because a Tseitin formula on a k-regular graph has one parity constraint
+of degree exactly k, and the compile-time ceiling of 8 put k = 9 and k = 10 out of reach at any
+runtime setting. With it raised, CryptoMiniSat solves 75/75 of that family instead of 60/75.</p>""")
 
     P.append('<h2 id="benchmarks">Benchmarks</h2>')
     P.append(family_table(con))
