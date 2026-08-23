@@ -148,6 +148,25 @@ each curve. `make_report.py` assembles **`report.html`**: a single self-containe
 covering what was run, how each benchmark family was generated, which encoding each solver
 saw, the plots, the PAR2 tables and the caveats.
 
+## The raw logs
+
+Every run's output is committed as `logs.tar.xz` — 12950 files, 543 MB of text compressed to
+25 MB. It holds a `.out-<solver>` (the solver's own output) and a `.timeout-<solver>`
+(`/usr/bin/time -v`: wall clock, CPU time, peak RSS, exit status) for each solver-instance
+pair, in the same directory layout the benchmarks use:
+
+```bash
+mkdir -p backup && tar -xf logs.tar.xz -C backup
+```
+
+`data.sqlite` is committed too, so the plots and the report can be rebuilt without running a
+single solver — clone, then run the three commands under [The report](#the-report). The logs
+are there for anything the database does not capture: conflict counts, XOR recovery
+statistics, Gauss-Jordan matrix dimensions, restart behaviour.
+
+Almost all of the bulk is CryptoMiniSat's per-restart and per-Gauss-call progress lines,
+which is why the archive compresses 22-fold.
+
 ## The other scripts
 
 | Script | Purpose |
