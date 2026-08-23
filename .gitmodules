@@ -1,0 +1,32 @@
+[submodule "xorcle"]
+	path = xorcle
+	url = https://github.com/glenn-sun/xorcle
+	ignore = dirty
+[submodule "2xnf_sat_solving"]
+	path = 2xnf_sat_solving
+	url = https://github.com/j-danner/2xnf_sat_solving
+	ignore = dirty
+[submodule "cryptominisat"]
+	path = cryptominisat
+	url = https://github.com/msoos/cryptominisat
+	ignore = dirty
+[submodule "matrix-challenges"]
+	path = matrix-challenges
+	url = https://github.com/marijnheule/matrix-challenges
+	ignore = dirty
+[submodule "xnfsat"]
+	path = xnfsat
+	url = https://github.com/Vtec234/xnfsat
+	ignore = dirty
+[submodule "Xorricane"]
+	path = Xorricane
+	url = https://github.com/j-danner/Xorricane
+	ignore = dirty
+[submodule "Xorricane-paper"]
+	path = Xorricane-paper
+	url = https://github.com/j-danner/Xorricane-paper
+	ignore = dirty
+[submodule "bosphorus"]
+	path = bosphorus
+	url = https://github.com/meelgroup/bosphorus
+	ignore = dirty

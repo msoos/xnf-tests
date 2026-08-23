@@ -1,0 +1,13 @@
+/cms-outputs
+/__pycache__
+notes.md
+/xorricane-bench
+*.xnf
+*.cnf
+*.xcnf
+*.xor-cnf
+*.zip
+*.anf
+backup/
+pics/
+/report.html
