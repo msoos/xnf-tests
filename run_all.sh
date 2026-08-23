@@ -27,5 +27,3 @@
 ./run_all_cms.py       -t 360 --ext .cnf   matrix-challenges/challenge1
 ./run_all_xorcle.py    -t 360 --ext .lxnf  -j 2 matrix-challenges/challenge1 # memory-outs without -j 2
 ./run_all_xorricane.py -t 360 --ext .xnf   matrix-challenges/challenge1
-
-./backup.sh
