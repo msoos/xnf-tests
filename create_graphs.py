@@ -202,8 +202,8 @@ def make_plot(con, name, title, family, combined, exclude, verbose):
     if combined:
         total = con.execute(
             "SELECT COUNT(DISTINCT family || '/' || instance) FROM data").fetchone()[0]
-        limit = con.execute(
-            "SELECT MAX(m) FROM (SELECT MIN(timeout_t) AS m FROM data GROUP BY family)").fetchone()[0]
+        # shortest family timeout: past it only matrix-challenge1 is still running
+        limit = con.execute("SELECT MIN(timeout_t) FROM data").fetchone()[0]
     else:
         total = con.execute(
             "SELECT COUNT(DISTINCT instance) FROM data WHERE family=?", (family,)).fetchone()[0]
