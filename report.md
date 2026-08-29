@@ -117,44 +117,6 @@ The CNF-XOR encodings a benchmark does not ship were generated to match the one 
 Xorricane paper uses, and reproduce all 200 shipped `.xcnf` files exactly — variable,
 clause and xor-line counts all agree.
 
-### Why CryptoMiniSat does best on the plain CNF
-
-The plain CNF is the largest input by far, yet it is the one CryptoMiniSat solves. The
-reason is that it preserves the cipher's native short XOR constraints. Bivium's update
-function is a handful of taps, so the real parity constraints are about five variables
-wide; `occ-xor` recovers them from the clause groups and hands Gauss-Jordan elimination a
-sparse, well conditioned system. The XNF-derived encodings cannot do this, because a
-lineral in the XNF is already a sum of many literals, and the definitional XOR that
-encodes it inherits that width.
-
-All three encodings of one Bivium instance (`tmp09lh13kb`):
-
-|  | `.cnf` | `.2xcnf` | `.xcnf` |
-|:-------------------|------------------:|-----------:|---------:|
-| formula | 8468 v / 110745 cl | 3544 v / 7310 cl | 1420 v / 3062 cl |
-| XOR constraints | 3664 recovered | 2305 given | 889 given |
-| `occ-xor` finds | 3664 | 0 | 0 |
-| clauses absorbed | 54280 | 0 | 0 |
-| largest matrix | 1242 × 1359 | 2100 × 3201 | 217 × 319 |
-| average XOR length | 4.69 | 11.49 | 16.33 |
-| matrices | 3 | 5 | 17 |
-| result | SAT, 3.07 s, 175 conflicts | timeout | timeout |
-
-CryptoMiniSat solves the CNF in 175 conflicts — it is barely searching, the Gaussian
-elimination is doing the work. The 2-XNF route is a real improvement over the shipped
-CNF-XOR (half the XOR length, one coherent 2100-row system instead of seventeen fragments)
-but its rows are still 2.4 times wider than what CryptoMiniSat extracts for itself, and
-that is what costs it the solves. What matters here is XOR sparsity, not formula size: the
-8468-variable CNF beats the 3544-variable CNF-XOR precisely because its recovered
-constraints are shorter.
-
-CryptoMiniSat is given up to three encodings of the Xorricane-paper families. Besides the
-shipped CNF-XOR and the plain CNF, `.2xcnf` is built from the *2-XNF* file rather than the
-XNF one — the encoding behind the paper's best-performing CryptoMiniSat configuration. It
-sits between the other two in size: on Bivium, 5314 variables against 2128 for the shipped
-CNF-XOR and 25766 for the blasted CNF, with the XOR constraints given explicitly rather
-than left to be recovered during preprocessing.
-
 ## Overall results {#overall}
 
 **PAR2** is the SAT-competition penalised average runtime: the mean over attempted
