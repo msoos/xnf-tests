@@ -126,8 +126,6 @@ def family_of(dirname):
             return parts[i + 1]
         if p == "xorricane-bench" and i + 1 < len(parts):
             return parts[i + 1]
-        if p == "matrix-challenges":
-            return "matrix-" + "-".join(parts[i + 1:]) if len(parts) > i + 1 else "matrix"
         if p == "benchmark" and i + 1 < len(parts):
             # ascon splits into r2/r3/r4, rand into rand/rand_sat
             if parts[i + 1] == "rand" and len(parts) > i + 2:

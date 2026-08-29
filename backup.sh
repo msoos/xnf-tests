@@ -5,7 +5,6 @@ set -euo pipefail
 SRC=(
     xorcle/tests/generated
     xorricane-bench
-    matrix-challenges
     2xnf_sat_solving/benchmark
 )
 

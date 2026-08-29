@@ -10,14 +10,6 @@
 	path = cryptominisat
 	url = https://github.com/msoos/cryptominisat
 	ignore = dirty
-[submodule "matrix-challenges"]
-	path = matrix-challenges
-	url = https://github.com/marijnheule/matrix-challenges
-	ignore = dirty
-[submodule "xnfsat"]
-	path = xnfsat
-	url = https://github.com/Vtec234/xnfsat
-	ignore = dirty
 [submodule "Xorricane"]
 	path = Xorricane
 	url = https://github.com/j-danner/Xorricane

@@ -13,14 +13,13 @@ DB = "data.sqlite"
 OUT_DIR = "pics"
 
 # preferred encoding when a solver was run on more than one, for the combined plot
-EXT_PREF = [".xcnf", ".cnf-xor", ".xnf", ".lxnf", ".anf", ".cnf"]
+EXT_PREF = [".xcnf", ".cnf-xor", ".xnf", ".anf", ".cnf"]
 
 COLORS = {
     "cms":       "#1f77b4",
     "cms-noxor": "#8c564b",
     "xorcle":    "#d62728",
     "xorricane": "#2ca02c",
-    "xnfsat":    "#9467bd",
     "bosphorus": "#ff7f0e",
 }
 FALLBACK = "#7f7f7f"
@@ -202,7 +201,6 @@ def make_plot(con, name, title, family, combined, exclude, verbose):
     if combined:
         total = con.execute(
             "SELECT COUNT(DISTINCT family || '/' || instance) FROM data").fetchone()[0]
-        # shortest family timeout: past it only matrix-challenge1 is still running
         limit = con.execute("SELECT MIN(timeout_t) FROM data").fetchone()[0]
     else:
         total = con.execute(
@@ -278,8 +276,8 @@ def main():
         families = [f for f in families if f in args.family]
 
     todo = [] if args.family else [
-        ("cdf_all", "All benchmarks (bosphorus, xnfsat, cms-noxor excluded: not run everywhere)",
-         None, True, {"bosphorus", "xnfsat", "cms-noxor"})]
+        ("cdf_all", "All benchmarks (bosphorus, cms-noxor excluded: not run everywhere)",
+         None, True, {"bosphorus", "cms-noxor"})]
     todo += [(f"cdf_{f}", f, f, False, set()) for f in families]
 
     for name, title, family, combined, exclude in todo:

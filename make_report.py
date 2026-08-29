@@ -20,11 +20,10 @@ SOLVERS = {
     "cms-noxor": ("CryptoMiniSat, XOR detection off", "CNF"),
     "xorcle": ("Xorcle", "XNF / CNF"),
     "xorricane": ("Xorricane", "XNF"),
-    "xnfsat": ("xnfSAT", "XNF (x-lines)"),
     "bosphorus": ("Bosphorus", "ANF"),
 }
 
-INSTANCE_EXTS = {".cnf", ".xnf", ".xcnf", ".2xnf", ".2xcnf", ".lxnf", ".anf",
+INSTANCE_EXTS = {".cnf", ".xnf", ".xcnf", ".2xnf", ".2xcnf", ".anf",
                  ".cnf-xor", ".bos-anf"}
 FILE_FLAGS = {"--anfread"}
 # timeout expressed via the solver's own flag: harness scaffolding, not configuration
@@ -62,10 +61,6 @@ FAMILY_NOTES = {
         "Random quadratic systems with m=2n, at least one solution, n=11..35."),
     "rand_qp_type_IV": ("Multivariate quadratic, Type IV (Benchmark 6.4)",
         "Random quadratic systems with n=floor(1.5m), n=11..35."),
-    "matrix-challenge1": ("MM-Challenge-1 (matrix multiplication)",
-        "Ten satisfiable Brent-equation formulas for 23-multiplication 3x3 matrix multiplication "
-        "schemes, from <code>marijnheule/matrix-challenges</code>. Designed to be hard for CDCL; "
-        "best known results come from stochastic local search."),
 }
 
 CSS = """
@@ -149,9 +144,6 @@ def clean_call(call):
                 kept.pop()
             dropped = True
             continue
-        if dropped and t.isdigit():          # xnfsat's trailing seed
-            dropped = False
-            continue
         dropped = False
         kept.append(t)
     return binary_path, " ".join(kept)
@@ -214,8 +206,7 @@ def family_table(con):
            '<th>Timeout (s)</th><th>Description</th></tr></thead><tbody>']
     for fam, n, lim in con.execute("""
             SELECT family, COUNT(DISTINCT instance), MIN(timeout_t)
-            FROM data GROUP BY family
-            ORDER BY family = 'matrix-challenge1', family"""):
+            FROM data GROUP BY family ORDER BY family"""):
         label, desc = FAMILY_NOTES.get(fam, (fam, ""))
         out.append(f"<tr><td>{e(fam)}<br><span class='sub'>{e(label)}</span></td>"
                    f"<td>{n}</td><td>{lim}</td><td class='desc'>{desc}</td></tr>")
@@ -259,11 +250,10 @@ def main():
     P.append("</ul></nav>")
 
     P.append('<h2 id="solvers">Solvers</h2>')
-    P.append("<p>Five solvers, each given the encoding it is designed for. "
+    P.append("<p>Four solvers, each given the encoding it is designed for. "
              "CryptoMiniSat is a CNF-XOR CDCL solver; Xorcle and Xorricane are XNF CDCL solvers "
-             "(disjunctions of parity constraints); xnfSAT is a stochastic local search solver "
-             "with native XOR support; Bosphorus combines algebraic and logical reasoning over "
-             "ANF.</p>")
+             "(disjunctions of parity constraints); Bosphorus combines algebraic and logical "
+             "reasoning over ANF.</p>")
     P.append(solver_table(con))
     P.append("""
 <h3>What CryptoMiniSat needed</h3>
@@ -277,10 +267,10 @@ and three changes were required. All are in the pinned revision used here:</p>
 <table><thead><tr><th>Commit</th><th>Change</th><th>Needed for</th></tr></thead><tbody>
 <tr><td><a href="https://github.com/msoos/cryptominisat/commit/068a3fd79"><code>068a3fd79</code></a></td>
     <td>fix crash when <code>--maxnummatrices</code> exceeds 1000</td>
-    <td>lifted pebbling, matrix multiplication</td></tr>
+    <td>lifted pebbling</td></tr>
 <tr><td><a href="https://github.com/msoos/cryptominisat/commit/bef479cef"><code>bef479cef</code></a></td>
     <td>avoid O(num_matrices) per-literal work in Gauss-Jordan elimination</td>
-    <td>lifted pebbling, matrix multiplication</td></tr>
+    <td>lifted pebbling</td></tr>
 <tr><td><a href="https://github.com/msoos/cryptominisat/commit/3970aaf24"><code>3970aaf24</code></a></td>
     <td>raise <code>MAX_XOR_RECOVER_SIZE</code> from 8 to 12</td>
     <td>Tseitin at k = 9, 10</td></tr>
@@ -305,15 +295,11 @@ Conversions were done with these tools:</p>
 <tr><td><code>.xnf</code></td><td>XNF, <code>+</code> linerals</td><td>shipped, or <code>cnf2xnf</code></td></tr>
 <tr><td><code>.2xnf</code></td><td>2-XNF, at most two linerals per clause</td>
     <td>shipped with the benchmark</td></tr>
-<tr><td><code>.lxnf</code></td><td>XNF with <code>x</code>-lines rewritten as linerals</td>
-    <td><code>xcnf_to_xnf.py</code></td></tr>
 <tr><td><code>.anf</code></td><td>algebraic normal form</td><td>shipped with the benchmark</td></tr>
 </tbody></table>
 <p>The CNF-XOR encodings a benchmark does not ship were generated to match the one the Xorricane
 paper uses, and reproduce all 200 shipped <code>.xcnf</code> files exactly &mdash; variable, clause
-and xor-line counts all agree. For the matrix-multiplication instances only CNF is published, so
-the XNF was recovered from it with Armin Biere's <code>cnf2xnf</code> extractor, which finds 729
-XOR constraints per instance.</p>
+and xor-line counts all agree.</p>
 <h3>Why CryptoMiniSat does best on the plain CNF</h3>
 <p>The plain CNF is the largest input by far, yet it is the one CryptoMiniSat solves. The reason is
 that it preserves the cipher's native short XOR constraints. Bivium's update function is a handful
@@ -353,13 +339,12 @@ given explicitly rather than left to be recovered during preprocessing.</p>""")
              "over attempted instances of the solve time, with unsolved instances charged twice "
              "the timeout. Lower is better. The <em>attempted</em> column makes the denominator "
              "explicit, since not every solver ran on every family.</p>")
-    P.append("<p>CDF of solving time over all families. Bosphorus and xnfSAT are excluded here because "
-             "neither was run on every family &mdash; Bosphorus only on the Ascon and "
-             "Xorricane-paper suites, xnfSAT only on the matrix-multiplication instances, and the "
-             "XOR-detection-off CryptoMiniSat configuration only on Bivium. "
+    P.append("<p>CDF of solving time over all families. Bosphorus is excluded here because it was "
+             "not run on every family &mdash; only on the Ascon and Xorricane-paper suites &mdash; "
+             "as is the XOR-detection-off CryptoMiniSat configuration, which ran only on Bivium. "
              "CryptoMiniSat appears twice: it was run on both a CNF-XOR and a plain CNF encoding "
              "of six families, so each line takes that encoding where it exists and the family's "
-             "only encoding elsewhere. Both cover all 1705 instances.</p>")
+             f"only encoding elsewhere. Both cover all {total_inst} instances.</p>")
     if os.path.exists(combined_svg):
         P.append(f"<figure>{inline_svg(combined_svg, 'all')}</figure>")
     P.append(par2_table(read_par2(os.path.join(PICS, "cdf_all_par2.csv"))))
@@ -386,21 +371,12 @@ effect: the CNF-XOR files were produced by re-translating from XNF, which inheri
 linerals and leaves the XOR system far denser than the one CryptoMiniSat recovers for itself. See
 <a href="#encodings">Why CryptoMiniSat does best on the plain CNF</a>. For this family the
 <code>.cnf</code> column is the meaningful one.</div>
-<div class="note"><strong>Xorcle memory use.</strong> Xorcle is by far the most memory-hungry
-solver in this comparison: it averages 252&nbsp;MB across all runs and peaks at 17.7&nbsp;GB,
-against 1.8&nbsp;GB for Xorricane and 6.5&nbsp;GB for CryptoMiniSat. Eighteen of its runs exceeded
-4&nbsp;GB, versus three for CryptoMiniSat and none for any other solver. The pressure is
-concentrated in two families &mdash; matrix-multiplication (17.7&nbsp;GB average) and lifted
-pebbling (2.1&nbsp;GB average, 9.9&nbsp;GB peak) &mdash; and it limits how many Xorcle runs can be
-scheduled in parallel, which is a practical cost the solved counts do not show.</div>
-<div class="note"><strong>Parallelism on the matrix-multiplication instances.</strong> Xorcle
-peaks at roughly 17&nbsp;GB of resident memory per run on this family, against Xorricane's
-1.7&nbsp;GB. On a 64&nbsp;GB machine, sixteen such runs at once exhaust memory and get killed by
-the OOM killer, so these instances were run with <code>-j 2</code>.</div>
-
-<div class="note"><strong>xnfSAT is single-seed.</strong> Stochastic local search has high run to
-run variance; the reference paper averages 192 seeded runs per instance. The eight solved
-instances here come from one seed and should be read as a lower bound.</div>
+<div class="note"><strong>Xorcle memory use.</strong> Xorcle has the highest peak memory of any
+solver here &mdash; 9.9&nbsp;GB, against 6.5&nbsp;GB for CryptoMiniSat and 1.8&nbsp;GB for
+Xorricane &mdash; and eight of its runs exceeded 4&nbsp;GB, versus three for CryptoMiniSat and none
+for any other solver. The pressure is concentrated in lifted pebbling (2.1&nbsp;GB average,
+9.9&nbsp;GB peak), where it limits how many Xorcle runs can be scheduled in parallel, a practical
+cost the solved counts do not show.</div>
 """)
 
     doc = (f"<!doctype html><html lang=en><head><meta charset=utf-8>"
