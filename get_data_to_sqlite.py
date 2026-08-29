@@ -13,6 +13,7 @@ DB_NAME = "data.sqlite"
 RE_RESULT = re.compile(r"^s\s+(?:ANF-)?(SATISFIABLE|UNSATISFIABLE)", re.M)
 RE_OOM_MSG = re.compile(r"bad_alloc|out of memory|Cannot allocate memory", re.I)
 RE_LIMIT = re.compile(r"timeout -k \d+ (\d+)")
+RE_LOG_SHA = re.compile(r"^c (?:CMS SHA1:|Bosphorus SHA revision) ([0-9a-f]{7,40})", re.M)
 
 
 def parse_elapsed(text):
@@ -83,7 +84,7 @@ _SHA_CACHE = {}
 
 
 def solver_sha(call):
-    """10-char SHA of the repo holding the solver binary, resolved at parse time."""
+    """Fallback for solvers that print no SHA: repo HEAD, resolved at parse time."""
     if not call:
         return None
     toks = call.split()
@@ -111,12 +112,13 @@ def out_parse(fname):
         with open(fname, "r", errors="replace") as f:
             text = f.read()
     except OSError:
-        return None, False
+        return None, False, None
     m = RE_RESULT.search(text)
     result = None
     if m:
         result = "SAT" if m.group(1) == "SATISFIABLE" else "UNSAT"
-    return result, bool(RE_OOM_MSG.search(text))
+    sha = RE_LOG_SHA.search(text)
+    return result, bool(RE_OOM_MSG.search(text)), sha.group(1)[:10] if sha else None
 
 
 def family_of(dirname):
@@ -194,7 +196,7 @@ def main():
                 t = timeout_parse(os.path.join(root, n))
                 if t is None:
                     continue
-                result, oom_msg = out_parse(os.path.join(root, stem + ".out-" + solver))
+                result, oom_msg, log_sha = out_parse(os.path.join(root, stem + ".out-" + solver))
 
                 early = t["timeout_t"] and t["wall_time"] is not None \
                     and t["wall_time"] < t["timeout_t"] * 0.9
@@ -212,7 +214,8 @@ def main():
                     t["wall_time"] if solved else None,
                     t["wall_time"], t["user_time"], t["sys_time"], t["cpu_pct"],
                     t["mem_MB"], t["timeout_t"], timed_out, mem_out, errored,
-                    t["exit_status"], t["signal"], t["call"], solver_sha(t["call"]),
+                    t["exit_status"], t["signal"], t["call"],
+                    log_sha or solver_sha(t["call"]),
                     t["major_faults"], t["minor_faults"], t["vol_ctx"],
                     t["invol_ctx"], t["swaps"], t["fs_in"], t["fs_out"],
                 ))
