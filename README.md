@@ -170,16 +170,20 @@ pointed at one with `--ext`:
 
 ```bash
 
+# use with old CMS
 ./run_all_cms.py       -t 180              xorcle/tests/generated
 ./run_all_cms.py       -t 180 --ext .cnf   2xnf_sat_solving/benchmark/ascon
-./run_all_cms.py       -t 180 --ext .xcnf  2xnf_sat_solving/benchmark/ascon
-./run_all_cms.py       -t 180 --ext .xcnf  2xnf_sat_solving/benchmark/rand
+./run_all_cms.py       -t 180 --ext .cnf   2xnf_sat_solving/benchmark/rand
 ./run_all_cms.py       -t 180 --ext .xcnf  xorricane-bench
 ./run_all_cms.py       -t 180 --ext .cnf   xorricane-bench
-./run_all_cms.py       -t 180 --ext .2xcnf xorricane-bench
-./run_all_cms.py       -t 180 --ext .cnf   xorricane-bench/bivium \
-                       --tag cms-noxor --cms-opts "--sls 0 --presimp 1 --xor 0"
 
+# use with new CMS
+./run_all_cms.py       -t 180             xorcle/tests/generated              --tag cms-autofixed --cms-opts "--presimp 1"
+./run_all_cms.py       -t 180 --ext .cnf  2xnf_sat_solving/benchmark/ascon    --tag cms-autofixed --cms-opts "--presimp 1"
+./run_all_cms.py       -t 180 --ext .cnf  2xnf_sat_solving/benchmark/rand     --tag cms-autofixed --cms-opts "--presimp 1"
+./run_all_cms.py       -t 180 --ext .cnf  xorricane-bench                     --tag cms-autofixed --cms-opts "--presimp 1"
+
+# run other tols
 ./run_all_xorcle.py    -t 180 --ext .cnf   xorcle/tests/generated
 ./run_all_xorcle.py    -t 180 --ext .xnf   2xnf_sat_solving/benchmark/ascon
 ./run_all_xorcle.py    -t 180 --ext .xnf   2xnf_sat_solving/benchmark/rand
