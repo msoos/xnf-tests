@@ -1,0 +1,40 @@
+:root{--fg:#1a1a1a;--bg:#fff;--muted:#666;--line:#ddd;--accent:#0b5cad;--warn:#8a4b00;
+      --warnbg:#fff8ec;--code:#f4f4f6}
+@media(prefers-color-scheme:dark){:root{--fg:#e6e6e6;--bg:#16181c;--muted:#a0a0a0;
+  --line:#333;--accent:#79b8ff;--warn:#e0b070;--warnbg:#2a2317;--code:#22252b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:2.5rem 1.5rem 6rem}
+h1{font-size:2rem;margin:0 0 .3rem}
+h2{font-size:1.4rem;margin:3rem 0 1rem;padding-bottom:.3rem;border-bottom:2px solid var(--line)}
+h3{font-size:1.1rem;margin:2rem 0 .5rem}
+a{color:var(--accent)}
+.sub{color:var(--muted);margin:0 0 2rem}
+code{background:var(--code);padding:.1em .35em;border-radius:3px;font-size:.88em}
+pre{background:var(--code);padding:.9rem 1rem;border-radius:6px;overflow-x:auto;font-size:.85rem;
+  line-height:1.45}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:.9rem}
+/* alignment comes from the pipe-table separator row (:--- / ---:), not from here */
+th,td{padding:.45rem .7rem;border-bottom:1px solid var(--line)}
+th{background:var(--code);font-weight:600;text-align:center}
+tbody tr:first-child td{font-weight:600}
+/* column widths come from the separator-row dash counts, via pandoc's <colgroup> */
+figure{margin:1.5rem 0}
+figure figcaption{color:var(--muted);font-size:.86rem;margin-top:.4rem}
+img{max-width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);
+  border-radius:6px}
+.note{background:var(--warnbg);border-left:3px solid var(--warn);padding:.8rem 1rem;
+  margin:1rem 0;border-radius:0 4px 4px 0;font-size:.92rem}
+.note strong{color:var(--warn)}
+.note p:first-child{margin-top:0}
+.note p:last-child{margin-bottom:0}
+nav{background:var(--code);padding:1rem 1.2rem;border-radius:6px;margin:2rem 0}
+nav ul{margin:.3rem 0;padding-left:1.2rem;columns:2;list-style:disc}
+nav ul ul{columns:1;font-size:.9em}
+nav a{color:var(--accent);text-decoration:none}
+nav a:hover{text-decoration:underline}
+.scroll{overflow-x:auto}
+.scroll table{min-width:34rem}
+td .fam{color:var(--muted);font-size:.86rem}

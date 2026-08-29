@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>$pagetitle$</title>
+$for(css)$
+<link rel="stylesheet" href="$css$">
+$endfor$
+</head>
+<body>
+<div class="wrap">
+<h1>$title$</h1>
+<p class="sub">$subtitle$</p>
+$if(toc)$
+<nav><strong>Contents</strong>
+$table-of-contents$
+</nav>
+$endif$
+$body$
+</div>
+</body>
+</html>

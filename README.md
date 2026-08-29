@@ -213,9 +213,27 @@ logs into `backup/`, keeping the directory structure.
 `get_data_to_sqlite.py` parses every log into `data.sqlite`, one row per solver-instance
 pair with wall clock, CPU time, peak RSS, exit status and result. `create_graphs.py` writes
 CDF plots and PAR2 tables into `pics/` as PNG, PDF and SVG, alongside the CSV data behind
-each curve. `make_report.py` assembles **`report.html`**: a single self-contained page
-covering what was run, how each benchmark family was generated, which encoding each solver
-saw, the plots, the PAR2 tables and the caveats.
+each curve. `make_report.py` then renders **`report.html`**, a single self-contained page.
+
+The report's text is **`report.md`**, ordinary Markdown — edit that, not the Python. It
+holds every word of prose plus the per-family labels and descriptions in its YAML header,
+and `make_report.py` only fills in the parts that come from the database:
+
+| Placeholder | Expands to |
+|:-------------------|:--------------------------------------------------|
+| `{{solver_table}}` | solver, git SHA, input format, command line |
+| `{{family_table}}` | family, instance count, timeout, description |
+| `{{par2 NAME}}` | the PAR2 table from `pics/NAME_par2.csv` |
+| `{{per_family}}` | a heading, plot and PAR2 table for every family |
+| `{{total_instances}}` | the distinct instance count |
+
+Plots are ordinary Markdown images (`![](pics/cdf_all.svg)`); pandoc inlines them as data
+URIs, so the result is still one file with no external references. Styling lives in
+`report.css` and the page skeleton in `template.html`. Needs `pandoc` and `python3-yaml`:
+
+```bash
+sudo apt install pandoc python3-yaml   # or: pip install pyyaml
+```
 
 ## The raw logs
 
@@ -242,3 +260,6 @@ statistics, Gauss-Jordan matrix dimensions, restart behaviour.
 | `convert_all.py` | batch wrapper around Xorcle's own converter |
 | `check_runs.py` | summarise outcomes across all logs and flag memory-outs |
 | `backup.sh` | copy just the logs into `backup/`, preserving paths |
+
+The report's own sources are `report.md` (prose), `report.css` (styling) and
+`template.html` (page skeleton); see [The report](#the-report).
