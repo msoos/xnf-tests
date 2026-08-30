@@ -167,14 +167,14 @@ pointed at one with `--ext`:
 
 ```bash
 
-# use with old CMS
+# use with old CMS 3970aaf24fad0e9bb0baa3dccdf7f75ce85b7dc2
 ./run_all_cms.py       -t 180              xorcle/tests/generated
 ./run_all_cms.py       -t 180 --ext .cnf   2xnf_sat_solving/benchmark/ascon
 ./run_all_cms.py       -t 180              2xnf_sat_solving/benchmark/rand
-./run_all_cms.py       -t 180 --ext .xcnf  xorricane-bench
+./run_all_cms.py       -t 180 --ext .xcnf  xorricane-bench/rand_qp_type_I
 ./run_all_cms.py       -t 180 --ext .cnf   xorricane-bench
 
-# use with new CMS
+# use with new CMS bf78ad08e6dde82bf4492565da17af3d6966a9da
 ./run_all_cms.py       -t 180             xorcle/tests/generated              --tag cms-autofixed --cms-opts "--presimp 1"
 ./run_all_cms.py       -t 180 --ext .cnf  2xnf_sat_solving/benchmark/ascon    --tag cms-autofixed --cms-opts "--presimp 1"
 ./run_all_cms.py       -t 180             2xnf_sat_solving/benchmark/rand     --tag cms-autofixed --cms-opts "--presimp 1"

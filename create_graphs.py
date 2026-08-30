@@ -15,6 +15,9 @@ OUT_DIR = "pics"
 # preferred encoding when a solver was run on more than one, for the combined plot
 EXT_PREF = [".xcnf", ".cnf-xor", ".xnf", ".anf", ".cnf"]
 
+# (solver, ext) pairs that get no series of their own in the combined plot
+COMBINED_SKIP = {("cms", ".xcnf")}
+
 COLORS = {
     "cms":       "#1f77b4",
     "cms-noxor": "#8c564b",
@@ -74,12 +77,16 @@ def combined_variants(con, solver):
     """One (label, {family: ext}) per encoding the solver was run on more than once.
 
     Each variant still spans every family: where the preferred encoding is absent,
-    the family's only encoding is used, so all variants cover the same instances."""
+    the family's only encoding is used, so all variants cover the same instances.
+    Pairs in COMBINED_SKIP get no variant, but are still used as such a fallback."""
     by_fam = exts_by_family(con, solver)
-    alternatives = sorted({e for exts in by_fam.values() if len(exts) > 1 for e in exts},
+    alternatives = sorted({e for exts in by_fam.values() if len(exts) > 1 for e in exts
+                           if (solver, e) not in COMBINED_SKIP},
                           key=lambda e: EXT_PREF.index(e) if e in EXT_PREF else 99)
-    if not alternatives:
-        return [(solver, {f: pick_ext(x) for f, x in by_fam.items()})]
+    if len(alternatives) < 2:
+        pref = alternatives[0] if alternatives else None
+        return [(solver, {f: (pref if pref in x else pick_ext(x))
+                          for f, x in by_fam.items()})]
     out = []
     for pref in alternatives:
         picks = {f: (pref if pref in x else pick_ext(x)) for f, x in by_fam.items()}
