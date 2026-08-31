@@ -205,44 +205,8 @@ logs into `backup/`, keeping the directory structure.
 
 ## Verifying the answers
 
-Every `SATISFIABLE` answer is checked against the file the solver was given:
-
-```bash
-./verify_sat.py 2xnf_sat_solving xorcle xorricane-bench
-```
-
-That walks the directories for `.out-xorricane` files, strips the suffix to find the
-instance, evaluates it under the `v`-line assignment and prints a summary. `OK` means the
-assignment satisfies every clause, `SKIP` means the run did not answer `SATISFIABLE`, and
-`WRONG` names the first clause that comes out false. The exit status is non-zero if
-anything is `WRONG` or `ERROR`, so it drops straight into a script.
-
-A clause is a disjunction of linerals, so a lineral `-3+7+9` is true when
-`(1 ⊕ x3) ⊕ x7 ⊕ x9 = 1`, and the clause is satisfied as soon as one of its linerals is.
-CNF and CNF-XOR are the degenerate cases — a one-literal lineral per clause, or a single
-`x`-line lineral — so the same checker handles the other solvers through `--suffix`:
-
-```bash
-./verify_sat.py -s .out-xorcle          2xnf_sat_solving xorcle xorricane-bench
-./verify_sat.py -s .out-cms-autofixed2  .
-```
-
-It also cross-checks the `c reading XNF from ...` line Xorricane prints against the
-instance it picked, so a stale or misplaced log is reported rather than silently checked
-against the wrong formula.
-
-Bosphorus is the exception: it reads ANF, which this tool does not parse.
-
-Across the committed logs every `SATISFIABLE` answer checks out, in about ten seconds:
-
-| Output | Verified | Not `SATISFIABLE` |
-|---|---:|---:|
-| `.out-xorricane` | 414 | 1281 |
-| `.out-xorcle` | 628 | 1067 |
-| `.out-cms` | 905 | 840 |
-| `.out-cms-autofixed2` | 889 | 806 |
-| `.out-cms-autofixed3` | 67 | 178 |
-| `.out-cms-autofixed4` | 35 | 15 |
+Every `SATISFIABLE` answer is checked against the file the solver was given
+using `verify_sat.py`. It can verify all solutions except that of Bosphorus.
 
 ## The report
 
