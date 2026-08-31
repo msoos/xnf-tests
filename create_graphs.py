@@ -216,6 +216,7 @@ def make_plot(con, name, title, family, combined, exclude, verbose):
             "SELECT MIN(timeout_t) FROM data WHERE family=?", (family,)).fetchone()[0]
 
     entries.sort(key=lambda e: -e[3])
+    gp_title = title.replace("_", "-")  # gnuplot's enhanced text makes "_x" a subscript
     gp_path, pdf_path, png_path = base + ".gnuplot", base + ".pdf", base + ".png"
     svg_path = base + ".svg"
     ymax = int(max(e[3] for e in entries) * 1.08) + 1
@@ -240,7 +241,7 @@ def make_plot(con, name, title, family, combined, exclude, verbose):
         ]:
             f.write(f"set terminal {term}\n")
             f.write(f'set output "{out}"\n')
-            f.write(f'set title "{title}  ({total} instances, {limit}s timeout)"\n')
+            f.write(f'set title "{gp_title}  ({total} instances, {limit}s timeout)"\n')
             f.write("set key bottom right box\n")
             f.write("unset logscale x\nunset logscale y\n")
             f.write('set xlabel "Time (s)"\n')
