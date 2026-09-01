@@ -254,8 +254,8 @@ sudo apt install pandoc python3-yaml   # or: pip install pyyaml
 
 ## The raw logs
 
-Every run's output is committed as `logs.tar.xz` — 12870 files, 492 MB of text compressed to
-23 MB. It holds a `.out-<solver>` (the solver's own output) and a `.timeout-<solver>`
+Every run's output is committed as `logs.tar.xz` — 15060 files, 513 MB of text compressed to
+26 MB. It holds a `.out-<solver>` (the solver's own output) and a `.timeout-<solver>`
 (`/usr/bin/time -v`: wall clock, CPU time, peak RSS, exit status) for each solver-instance
 pair, in the same directory layout the benchmarks use:
 
