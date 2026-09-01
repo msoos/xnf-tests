@@ -13,11 +13,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CMS = os.path.join(HERE, "cryptominisat", "build", "cryptominisat5")
 
-# From notes.md: without these CMS drops most GJ matrices on these benchmarks.
-DEFAULT_OPTS = ["--sls" , "0", "--autodisablegauss", "0", "--presimp", "1", "--maxmatrixrows", "100000",
-                "--maxmatrixcols", "100000", "--maxnummatrices", "1000000",
-                "--minmatrixrows", "1", "--maxxorsize", "12"]
-
 
 def collect(paths: list[str], ext: str) -> list[str]:
     ext = ext if ext.startswith(".") else "." + ext
@@ -57,7 +52,7 @@ def main() -> int:
     ap.add_argument("--skip-existing", action="store_true", help="skip files that already have .out-cms")
     ap.add_argument("--tag", default="cms",
                     help="output suffix and series name, e.g. 'cms-noxor' (default: cms)")
-    ap.add_argument("--cms-opts", help="replace the default CMS options (space-separated)")
+    ap.add_argument("--cms-opts", default="", help="CMS options (space-separated)")
     args = ap.parse_args()
 
     cms = args.cms
@@ -65,7 +60,7 @@ def main() -> int:
         print(f"error: no cryptominisat binary at {cms} -- build it first", file=sys.stderr)
         return 1
 
-    opts = args.cms_opts.split() if args.cms_opts is not None else DEFAULT_OPTS
+    opts = args.cms_opts.split()
     files = collect(args.paths, args.ext)
     if args.skip_existing:
         files = [f for f in files if not os.path.exists(f + ".out-" + args.tag)]

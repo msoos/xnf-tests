@@ -21,6 +21,7 @@ OUT = "report.html"
 
 SOLVERS = {
     "cms": ("CryptoMiniSat", "CNF-XOR / CNF"),
+    "cms-improved": ("CryptoMiniSat, newer build", "CNF-XOR / CNF"),
     "cms-noxor": ("CryptoMiniSat, XOR detection off", "CNF"),
     "xorcle": ("Xorcle", "XNF / CNF"),
     "xorricane": ("Xorricane", "XNF"),

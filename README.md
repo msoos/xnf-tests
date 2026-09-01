@@ -46,7 +46,7 @@ the pebbling family would run at all.
 
 **The options matter as much as the code.** On benchmarks where XOR constraints dominate,
 CryptoMiniSat's defaults are tuned for general CNF and discard almost all of the linear structure
-before search begins. `run_all_cms.py` therefore runs it as:
+before search begins. The `cms` runs therefore pass `$CMS_PARAMS`:
 
 ```
 --sls 0 --autodisablegauss 0 --presimp 1 --maxmatrixrows 100000 --maxmatrixcols 100000
@@ -70,8 +70,8 @@ CryptoMiniSat's CNF path rather than its CNF-XOR one.
 **Wide XOR constraints.** A Tseitin formula on a k-regular graph has one parity constraint of
 degree exactly k per vertex, so recovering them needs a size limit of at least k. The runtime
 default is `--maxxorsize 7`, but the compile-time ceiling `MAX_XOR_RECOVER_SIZE` was 8, which made
-k = 9 and k = 10 unreachable at any setting. With the ceiling raised and `--maxxorsize 12` passed
-in `run_all.sh`, CryptoMiniSat recovers 9- and 10-wide constraints and solves all 75 instances;
+k = 9 and k = 10 unreachable at any setting. With the ceiling raised and `--maxxorsize 12` in
+`$CMS_PARAMS`, CryptoMiniSat recovers 9- and 10-wide constraints and solves all 75 instances;
 before, it solved 60 and timed out on every k ≥ 8 instance.
 
 ### Bosphorus changes needed for these benchmarks
@@ -163,22 +163,38 @@ pointed at one with `--ext`:
 | `.xnf` | XNF, `+` linerals | Xorcle, Xorricane |
 | `.anf` | algebraic normal form | Bosphorus |
 
+
 ## Running the solvers
 
+The two CryptoMiniSat series are two different builds of the solver, so the submodule has to
+be checked out at each revision in turn and rebuilt before its block is run:
+
+- `cms` — [`3970aaf24fad0e9bb0baa3dccdf7f75ce85b7dc2`](https://github.com/msoos/cryptominisat/commit/3970aaf24), the
+  classic solver, run with the full `$CMS_PARAMS` option set below.
+- `cms-improved` — [`b79d6193ac93c0abb18f269dc37c6b936b462db6`](https://github.com/msoos/cryptominisat/commit/b79d6193a),
+  run with no options at all.
+
 ```bash
+git -C cryptominisat checkout <hash>
+(cd cryptominisat/build && cmake .. && make -j$(nproc))
+```
 
-# use with old CMS 3970aaf24fad0e9bb0baa3dccdf7f75ce85b7dc2
-./run_all_cms.py       -t 180              xorcle/tests/generated
-./run_all_cms.py       -t 180 --ext .cnf   2xnf_sat_solving/benchmark/ascon
-./run_all_cms.py       -t 180              2xnf_sat_solving/benchmark/rand
-./run_all_cms.py       -t 180 --ext .xcnf  xorricane-bench/rand_qp_type_I
-./run_all_cms.py       -t 180 --ext .cnf   xorricane-bench
+```bash
+CMS_PARAMS="--sls 0 --autodisablegauss 0 --presimp 1 --maxmatrixrows 100000 \
+            --maxmatrixcols 100000 --maxnummatrices 1000000 --minmatrixrows 1 --maxxorsize 12"
 
-# use with new CMS newest b79d6193ac93c0abb18f269dc37c6b936b462db6
-./run_all_cms.py       -t 180             xorcle/tests/generated              --tag cms-fixed --cms-opts ""
-./run_all_cms.py       -t 180 --ext .cnf  2xnf_sat_solving/benchmark/ascon    --tag cms-fixed --cms-opts ""
-./run_all_cms.py       -t 180             2xnf_sat_solving/benchmark/rand     --tag cms-fixed --cms-opts ""
-./run_all_cms.py       -t 180 --ext .cnf  xorricane-bench                     --tag cms-fixed --cms-opts ""
+# with CMS 3970aaf24fad0e9bb0baa3dccdf7f75ce85b7dc2
+./run_all_cms.py       -t 180              xorcle/tests/generated                  --cms-opts "$CMS_PARAMS"
+./run_all_cms.py       -t 180 --ext .cnf   2xnf_sat_solving/benchmark/ascon        --cms-opts "$CMS_PARAMS"
+./run_all_cms.py       -t 180              2xnf_sat_solving/benchmark/rand         --cms-opts "$CMS_PARAMS"
+./run_all_cms.py       -t 180 --ext .xcnf  xorricane-bench/rand_qp_type_I          --cms-opts "$CMS_PARAMS"
+./run_all_cms.py       -t 180 --ext .cnf   xorricane-bench                         --cms-opts "$CMS_PARAMS"
+
+# with CMS b79d6193ac93c0abb18f269dc37c6b936b462db6
+./run_all_cms.py       -t 180              xorcle/tests/generated              --tag cms-improved
+./run_all_cms.py       -t 180 --ext .cnf   2xnf_sat_solving/benchmark/ascon    --tag cms-improved
+./run_all_cms.py       -t 180              2xnf_sat_solving/benchmark/rand     --tag cms-improved
+./run_all_cms.py       -t 180 --ext .cnf   xorricane-bench                     --tag cms-improved
 
 # run other tols
 ./run_all_xorcle.py    -t 180 --ext .cnf   xorcle/tests/generated
@@ -193,15 +209,10 @@ pointed at one with `--ext`:
 
 ./run_all_bosphorus.py -t 180 --ext .anf   2xnf_sat_solving/benchmark/ascon --bosphorus-opts "--el 0"
 ./run_all_bosphorus.py -t 180 --ext .anf   xorricane-bench --bosphorus-opts "--el 0"
-
-./backup.sh
 ```
 
-This is the long part — many hours, four solvers over every family at a 180 s timeout.
 Each run writes a `.out-<solver>` and a
-`.timeout-<solver>` beside its instance, the latter holding `/usr/bin/time -v` output, so
-an interrupted sweep resumes with `--skip-existing`. `backup.sh` then copies just those
-logs into `backup/`, keeping the directory structure.
+`.timeout-<solver>` beside its instance, the latter holding `/usr/bin/time -v` output
 
 ## Verifying the answers
 

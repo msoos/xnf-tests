@@ -93,6 +93,19 @@ constraint of degree exactly k, and the compile-time ceiling of 8 put k = 9 and 
 of reach at any runtime setting. With it raised, CryptoMiniSat solves 75/75 of that family
 instead of 60/75.
 
+### The improved CryptoMiniSat
+
+The `cms-improved` series is a newer CryptoMiniSat,
+[`b79d6193a`](https://github.com/msoos/cryptominisat/commit/b79d6193a), against
+[`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) for `cms` — and it needs
+none of the tuning above, because the limits it used to trip over are gone and the CNF-XOR path
+now carries its own weight on defaults. Over the 895 instances where the two builds were given the
+identical file, it solves 718 against 697 and cuts PAR2 from 96.1 s to 83.7 s, with the gains
+concentrated where the linear structure is doing the work: random k-XNF 37 → 40 (PAR2 33.5 s →
+2.3 s), restricted k-XNF 37 → 40 (31.0 s → 2.3 s), Bivium 34 → 39 (131.8 s → 93.5 s), MQ Type I
+30 → 34 and the random linear + 2-XNF family 40 → 43. It loses nothing anywhere except lifted
+pebbling, where both solve all 40 and the newer build is 1.3 s slower on average.
+
 ## Benchmarks {#benchmarks}
 
 ::: scroll
