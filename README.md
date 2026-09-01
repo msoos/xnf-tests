@@ -174,11 +174,11 @@ pointed at one with `--ext`:
 ./run_all_cms.py       -t 180 --ext .xcnf  xorricane-bench/rand_qp_type_I
 ./run_all_cms.py       -t 180 --ext .cnf   xorricane-bench
 
-# use with new CMS bf78ad08e6dde82bf4492565da17af3d6966a9da
-./run_all_cms.py       -t 180             xorcle/tests/generated              --tag cms-autofixed --cms-opts "--presimp 1"
-./run_all_cms.py       -t 180 --ext .cnf  2xnf_sat_solving/benchmark/ascon    --tag cms-autofixed --cms-opts "--presimp 1"
-./run_all_cms.py       -t 180             2xnf_sat_solving/benchmark/rand     --tag cms-autofixed --cms-opts "--presimp 1"
-./run_all_cms.py       -t 180 --ext .cnf  xorricane-bench                     --tag cms-autofixed --cms-opts "--presimp 1"
+# use with new CMS newest b79d6193ac93c0abb18f269dc37c6b936b462db6
+./run_all_cms.py       -t 180             xorcle/tests/generated              --tag cms-fixed --cms-opts ""
+./run_all_cms.py       -t 180 --ext .cnf  2xnf_sat_solving/benchmark/ascon    --tag cms-fixed --cms-opts ""
+./run_all_cms.py       -t 180             2xnf_sat_solving/benchmark/rand     --tag cms-fixed --cms-opts ""
+./run_all_cms.py       -t 180 --ext .cnf  xorricane-bench                     --tag cms-fixed --cms-opts ""
 
 # run other tols
 ./run_all_xorcle.py    -t 180 --ext .cnf   xorcle/tests/generated
