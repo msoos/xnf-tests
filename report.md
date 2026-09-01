@@ -95,16 +95,22 @@ instead of 60/75.
 
 ### The improved CryptoMiniSat
 
-The `cms-improved` series is a newer CryptoMiniSat,
-[`b79d6193a`](https://github.com/msoos/cryptominisat/commit/b79d6193a), against
-[`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) for `cms` — and it needs
-none of the tuning above, because the limits it used to trip over are gone and the CNF-XOR path
-now carries its own weight on defaults. Over the 895 instances where the two builds were given the
-identical file, it solves 718 against 697 and cuts PAR2 from 96.1 s to 83.7 s, with the gains
-concentrated where the linear structure is doing the work: random k-XNF 37 → 40 (PAR2 33.5 s →
-2.3 s), restricted k-XNF 37 → 40 (31.0 s → 2.3 s), Bivium 34 → 39 (131.8 s → 93.5 s), MQ Type I
-30 → 34 and the random linear + 2-XNF family 40 → 43. It loses nothing anywhere except lifted
-pebbling, where both solve all 40 and the newer build is 1.3 s slower on average.
+`cms-improved` is [`b79d6193a`](https://github.com/msoos/cryptominisat/commit/b79d6193a), 70
+commits on from the [`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) used
+for `cms`, and it is run with no options at all because
+[`4b82356e7`](https://github.com/msoos/cryptominisat/commit/4b82356e7) made the defaults what this
+repository needed, i.e. to what's above, also fixing the autodisable switch,
+and startup simplification became the binary's default. Gauss-Jordan itself was
+then made cheaper: O(1) watch deletion instead of a watchlist scan, the XOR
+reason matrix kept as a bitset and only under FRAT, redundant full-width row
+scans dropped from propagation, and only the D half of the [I|D] matrix stored.
+Most of the rest is CaDiCaL's search brought across: its restart scheme,
+learnt-clause database reduction, vivification (schedule,
+subsume-during-vivify, instantiation), rephasing, lucky phases and phase-tied
+branching — alongside all-UIP shrinking, on-the-fly strengthening, reason-side
+bumping and trail reuse on backjump and restart. The CCNR local search was
+replaced by xnfSAT, which can use the XOR structure, so switching local search
+off is no longer necessary either.
 
 ## Benchmarks {#benchmarks}
 
