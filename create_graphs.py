@@ -147,7 +147,10 @@ def write_series(con, base, label, solver, ext, family, combined):
 
 
 def par2_row(con, solver, ext, family, combined):
-    """PAR2 = mean over attempted instances, unsolved counted as 2x that family's timeout."""
+    """PAR2 = mean over attempted instances, unsolved counted as 2x the timeout
+    that run was actually given. A family can hold runs made under different
+    limits, so the penalty comes from each row's own timeout_t, not from one
+    limit picked for the whole family."""
     if combined:
         fams = sorted(ext.items())
     else:
@@ -157,7 +160,7 @@ def par2_row(con, solver, ext, family, combined):
     times = []
     mem = 0.0
     for fam, fam_ext in fams:
-        q = "SELECT solve_time, mem_MB FROM data WHERE solver=? AND family=?"
+        q = "SELECT solve_time, mem_MB, timeout_t FROM data WHERE solver=? AND family=?"
         args = [solver, fam]
         if fam_ext is not None:
             q += " AND ext=?"
@@ -165,13 +168,14 @@ def par2_row(con, solver, ext, family, combined):
         rows = con.execute(q, args).fetchall()
         if not rows:
             continue
-        limit = con.execute(
-            "SELECT MIN(timeout_t) FROM data WHERE family=?", (fam,)).fetchone()[0] or 0
-        for t, m in rows:
+        #only a fallback, for rows whose own limit did not get parsed
+        fam_limit = con.execute(
+            "SELECT MAX(timeout_t) FROM data WHERE family=?", (fam,)).fetchone()[0] or 0
+        for t, m, lim in rows:
             attempted += 1
             mem = max(mem, m or 0.0)
             if t is None:
-                penalty += 2 * limit
+                penalty += 2 * (lim or fam_limit)
             else:
                 solved += 1
                 times.append(t)
