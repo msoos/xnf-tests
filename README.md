@@ -211,8 +211,10 @@ CMS_PARAMS="--sls 0 --autodisablegauss 0 --presimp 1 --maxmatrixrows 100000 \
 ./run_all_bosphorus.py -t 180 --ext .anf   xorricane-bench --bosphorus-opts "--el 0"
 ```
 
-Each run writes a `.out-<solver>` and a
-`.timeout-<solver>` beside its instance, the latter holding `/usr/bin/time -v` output
+Each run writes a `.out-<tag>` and a
+`.timeout-<tag>` beside its instance, the latter holding `/usr/bin/time -v` output. The tag
+defaults to the solver's name; `run_all_cms.py` and `run_all_xorcle.py` take `--tag`, so a
+newer build becomes a series of its own and the older logs stay in the report beside it.
 
 ## Verifying the answers
 

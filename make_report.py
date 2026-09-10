@@ -108,11 +108,25 @@ def par2_table(name):
           cell(r["avg_time_solved_s"] or "-"), cell(r["max_mem_MB"])] for r in rows])
 
 
+def base_of(solver):
+    """The SOLVERS entry a --tag series such as 'betterxorcle' belongs to, if any."""
+    return max((b for b in SOLVERS if b in solver), key=len, default=None)
+
+
+def solver_order(solver):
+    base = base_of(solver)
+    return (list(SOLVERS).index(base) if base else len(SOLVERS), solver)
+
+
 def solver_table(con):
+    solvers = sorted((s for (s,) in con.execute("SELECT DISTINCT solver FROM data")),
+                     key=solver_order)
     rows = []
-    for solver, (name, fmt) in SOLVERS.items():
-        if not con.execute("SELECT COUNT(*) FROM data WHERE solver=?", (solver,)).fetchone()[0]:
-            continue
+    for solver in solvers:
+        base = base_of(solver)
+        name, fmt = SOLVERS[base] if base else (solver, "?")
+        if base and base != solver:
+            name = f"{name} [{solver}]"
         raw = con.execute(
             "SELECT call, solver_sha FROM data WHERE solver=? AND call IS NOT NULL LIMIT 1",
             (solver,)).fetchone()

@@ -13,7 +13,8 @@ DB_NAME = "data.sqlite"
 RE_RESULT = re.compile(r"^s\s+(?:ANF-)?(SATISFIABLE|UNSATISFIABLE)", re.M)
 RE_OOM_MSG = re.compile(r"bad_alloc|out of memory|Cannot allocate memory", re.I)
 RE_LIMIT = re.compile(r"timeout -k \d+ (\d+)")
-RE_LOG_SHA = re.compile(r"^c (?:CMS SHA1:|Bosphorus SHA revision) ([0-9a-f]{7,40})", re.M)
+RE_LOG_SHA = re.compile(
+    r"^c (?:CMS SHA1:|Bosphorus SHA revision|Xorcle SHA:) ([0-9a-f]{7,40})", re.M)
 
 
 def parse_elapsed(text):

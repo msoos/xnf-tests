@@ -27,6 +27,9 @@ COLORS = {
 }
 FALLBACK = "#7f7f7f"
 
+# handed out in turn to --tag series with no colour above, e.g. betterxorcle
+EXTRA_COLORS = ["#9467bd", "#e377c2", "#17becf", "#bcbd22", "#393b79", "#ad494a", "#637939"]
+
 SOLID_SOLVERS = {"cms"}
 
 # distinct shades when one solver is plotted on several encodings
@@ -41,6 +44,13 @@ def color_for(solver, label):
     if m and (solver, m.group(1)) in SHADES:
         return SHADES[(solver, m.group(1))]
     return COLORS.get(solver, FALLBACK)
+
+
+def assign_colors(con):
+    extra = iter(EXTRA_COLORS)
+    for (solver,) in con.execute("SELECT DISTINCT solver FROM data ORDER BY solver"):
+        if solver not in COLORS:
+            COLORS[solver] = next(extra, FALLBACK)
 
 
 def png_dimensions(path):
@@ -283,7 +293,8 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
     con = sqlite3.connect(DB)
-    families = [r[0] for r in con.execute("SELECT DISTINCT family FROM data ORDER BY family")]
+    assign_colors(con)
+    families =[r[0] for r in con.execute("SELECT DISTINCT family FROM data ORDER BY family")]
     if args.family:
         families = [f for f in families if f in args.family]
 

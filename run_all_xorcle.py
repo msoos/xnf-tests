@@ -40,10 +40,23 @@ def result_of(rc: int, out: str) -> str:
     return f"UNKNOWN(rc={rc})"
 
 
-def run_one(binary: str, opts: list[str], timeout: int, path: str) -> tuple[str, str, float]:
-    out, tim = path + ".out-xorcle", path + ".timeout-xorcle"
+def git_sha(binary: str) -> str:
+    try:
+        return subprocess.run(["git", "-C", os.path.dirname(os.path.abspath(binary)),
+                               "rev-parse", "HEAD"],
+                              capture_output=True, text=True, timeout=10).stdout.strip() or "?"
+    except (OSError, subprocess.SubprocessError):
+        return "?"
+
+
+def run_one(binary: str, opts: list[str], timeout: int, tag: str, sha: str,
+            path: str) -> tuple[str, str, float]:
+    out, tim = path + ".out-" + tag, path + ".timeout-" + tag
     start = time.monotonic()
     with open(out, "w") as fout:
+        # xorcle prints no version of its own, and the repo HEAD moves on after the run
+        fout.write(f"c Xorcle SHA: {sha}\n")
+        fout.flush()
         rc = subprocess.call(["/usr/bin/time", "-v", "-o", tim,
                               "timeout", "-k", "10", str(timeout), binary] + opts + [path],
                              stdout=fout, stderr=subprocess.STDOUT)
@@ -57,7 +70,9 @@ def main() -> int:
     ap.add_argument("-t", "--timeout", type=int, default=300)
     ap.add_argument("--xorcle", default=DEFAULT_XORCLE)
     ap.add_argument("--ext", default=".xnf", help="comma-separated exact extensions to search dirs for")
-    ap.add_argument("--skip-existing", action="store_true", help="skip files that already have .out-xorcle")
+    ap.add_argument("--skip-existing", action="store_true", help="skip files that already have .out-<tag>")
+    ap.add_argument("--tag", default="xorcle",
+                    help="output suffix and series name, e.g. 'betterxorcle' (default: xorcle)")
     ap.add_argument("--xorcle-opts", default="", help="extra xorcle options (space-separated)")
     args = ap.parse_args()
 
@@ -69,20 +84,21 @@ def main() -> int:
     opts = args.xorcle_opts.split()
     files = collect(args.paths, args.ext.split(","))
     if args.skip_existing:
-        files = [f for f in files if not os.path.exists(f + ".out-xorcle")]
+        files = [f for f in files if not os.path.exists(f + ".out-" + args.tag)]
     if not files:
         print("no files to run", file=sys.stderr)
         return 1
 
+    sha = git_sha(binary)
     total = len(files)
-    print(f"{binary} {' '.join(opts)}")
+    print(f"{binary} {' '.join(opts)}   -> .out-{args.tag}  (SHA {sha[:10]})")
     print(f"{total} files, {args.jobs} parallel, {args.timeout}s timeout", flush=True)
 
     counts: dict[str, int] = {}
     done = 0
     start = time.monotonic()
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futs = [pool.submit(run_one, binary, opts, args.timeout, f) for f in files]
+        futs = [pool.submit(run_one, binary, opts, args.timeout, args.tag, sha, f) for f in files]
         for fut in as_completed(futs):
             path, res, elapsed = fut.result()
             done += 1
