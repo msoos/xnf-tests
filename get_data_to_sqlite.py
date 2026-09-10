@@ -15,6 +15,8 @@ RE_OOM_MSG = re.compile(r"bad_alloc|out of memory|Cannot allocate memory", re.I)
 RE_LIMIT = re.compile(r"timeout -k \d+ (\d+)")
 RE_LOG_SHA = re.compile(
     r"^c (?:CMS SHA1:|Bosphorus SHA revision|Xorcle SHA:) ([0-9a-f]{7,40})", re.M)
+# runs whose logs predate the SHA line; the repo HEAD fallback would report whatever is checked out now
+PINNED_SHA = {"xorcle": "948b36ce2b0bbe78079932c9bbc8956519c6dfc2"}
 
 
 def parse_elapsed(text):
@@ -216,7 +218,7 @@ def main():
                     t["wall_time"], t["user_time"], t["sys_time"], t["cpu_pct"],
                     t["mem_MB"], t["timeout_t"], timed_out, mem_out, errored,
                     t["exit_status"], t["signal"], t["call"],
-                    log_sha or solver_sha(t["call"]),
+                    (log_sha or PINNED_SHA.get(solver, "")[:10] or solver_sha(t["call"])),
                     t["major_faults"], t["minor_faults"], t["vol_ctx"],
                     t["invol_ctx"], t["swaps"], t["fs_in"], t["fs_out"],
                 ))
