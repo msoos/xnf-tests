@@ -1,0 +1,38 @@
+From 7797956e8c0b372a418720d0c901c82a062f9b76 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 22:56:17 +0200
+Subject: [PATCH] Fix null dereference in init_clss() assertion with -no-lgj
+
+Bug: with -no-lgj, lazy_gauss_jordan is never allocated, but the assertion
+at the end of solver::init_clss() calls lazy_gauss_jordan->size(). Every
+run with -no-lgj in a Debug build dereferences a null pointer (UBSan:
+"member call on null pointer of type 'struct lin_sys_lazy_GE'" at
+src/solver.cpp:198). Release builds are unaffected, the assert is compiled
+out there.
+
+Fix: count the size of the LGJ system only when LGJ is enabled.
+
+Found by differential fuzzing (xnf_fuzzer.py) with a sanitizer build: all
+35 failing runs of this kind had -no-lgj.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/solver.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/solver.cpp b/src/solver.cpp
+index e002690..240a959 100644
+--- a/src/solver.cpp
++++ b/src/solver.cpp
+@@ -196,7 +196,7 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
+     }
+     original_cls_count = xnf_clss.size();
+ 
+-    assert(active_cls+lazy_gauss_jordan->size() >= xnf_clss.size()-std::min(xnf_clss.size(),lineral_queue.size()));
++    assert(active_cls+(opt.lgj ? lazy_gauss_jordan->size() : 0) >=xnf_clss.size()-std::min(xnf_clss.size(),lineral_queue.size()));
+ 
+     // init active_cls_stack
+     active_cls_stack = vec<var_t>();
+-- 
+2.55.0
+

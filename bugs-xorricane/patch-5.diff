@@ -1,0 +1,44 @@
+From f6089e50b5f84a9a97e046121d289a458e07666a Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:11:38 +0200
+Subject: [PATCH] Fix Gauss-elimination in-processing never reading the first
+ row
+
+Bug: find_implications_by_GE_core() brings the watched linerals into
+reduced row echelon form and then scans the rows for implied units and
+conflicts with "for(r = rank-1; r>0; --r)", so row 0 is never read.
+Whatever the first row implies is lost: a unit x = c there is not
+propagated, and if the only non-zero row is the conflict row 1 = 0
+(rank 1), the conflict is missed.
+
+Fix: include row 0 (rci_t is signed, so r>=0 terminates).
+
+Effect: with -il 1 on a 799-variable 2-XNF fuzzer instance, GE
+in-processing now finds 132471 implications instead of 56640, with the
+same answer (UNSAT). A regression run of 200 2-XNF fuzzer instances
+(xnf_fuzzer.py) shows no disagreement with CryptoMiniSat.
+
+Found by reading the code while chasing an assertion failure in the -il
+(GE in-processing) path.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/solver.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/solver.cpp b/src/solver.cpp
+index 240a959..cc836b0 100644
+--- a/src/solver.cpp
++++ b/src/solver.cpp
+@@ -1873,7 +1873,7 @@ bool solver::find_implications_by_GE_core(stats& s) {
+   //read results
+   list<lineral> linerals_;
+   vec<var_t> idxs;
+-  for(rci_t r = rank-1; r>0; --r) {
++  for(rci_t r = rank-1; r>=0; --r) {
+     idxs.clear();
+     for(rci_t c=0; (unsigned)c<n_vars; ++c) {
+         if( mzd_read_bit(M, r, c) ) {
+-- 
+2.55.0
+

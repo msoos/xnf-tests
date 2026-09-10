@@ -1,0 +1,42 @@
+From 7f4ca0715561312084fc61f3c0b7f285f79b0187 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:10:22 +0200
+Subject: [PATCH] check_drup_parity.py: XOR repeated variables in a lineral
+
+Bug: the checker parses a lineral by OR-ing in each variable's bit, so a
+repeated variable is kept instead of cancelled -- the same bug as in the
+solver's parser: "1+1+2" was read as x1+x2 rather than x2. It therefore
+checks proofs against a different formula from the one in the file, and
+rejects correct proofs, e.g. for
+
+  p xnf 2 2
+  1+1+2 0
+  -2 0
+
+it reports "ERROR line 1: no conflict derived for learned id 3".
+
+Fix: XOR the bit in, so x + x = 0.
+
+Found by checking xorcle's proofs on hand-written edge cases.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ tools/check_drup_parity.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/check_drup_parity.py b/tools/check_drup_parity.py
+index 76c5db8..98d84e9 100644
+--- a/tools/check_drup_parity.py
++++ b/tools/check_drup_parity.py
+@@ -94,7 +94,7 @@ def parse_clause_token(token: str, nvars: int) -> int:
+             raise ValueError(f"Invalid integer in token: '{token}'") from exc
+         if var <= 0 or var > nvars:
+             raise ValueError(f"Variable out of range in token: '{token}'")
+-        row |= 1 << (var - 1)
++        row ^= 1 << (var - 1)  # a repeated variable cancels (x + x = 0)
+ 
+     if rhs_zero:
+         row |= 1 << nvars
+-- 
+2.55.0
+

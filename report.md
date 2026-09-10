@@ -185,3 +185,32 @@ against 6.5 GB for CryptoMiniSat and 1.8 GB for Xorricane — and eight of its r
 concentrated in lifted pebbling (2.1 GB average, 9.9 GB peak), where it limits how many
 Xorcle runs can be scheduled in parallel, a practical cost the solved counts do not show.
 :::
+
+## Solver bugs found by fuzzing {#bugs}
+
+`xnf_fuzzer.py` fuzzes both solvers against CryptoMiniSat, checking SAT answers by
+substitution and UNSAT answers with `cake_xlrup`. Each bug found has a fix in its own patch,
+whose commit message is the bug report.
+
+### Xorcle: `bugs-xorcle/`
+
+| Patch | Bug |
+|---|---|
+| `patch-1.diff` | a repeated variable in a lineral is OR-ed, not XOR-ed: wrong answers |
+| `patch-2.diff` | an empty input clause segfaults instead of giving UNSAT |
+| `patch-3.diff` | the proof checker rejects the `p xnf` header |
+| `patch-4.diff` | the proof checker has the same OR/XOR parsing bug |
+
+### Xorricane: `bugs-xorricane/`
+
+| Patch | Bug |
+|---|---|
+| `patch-1.diff` | `util` clause deletion writes out of bounds: segfault |
+| `patch-2.diff` | `avg_util` clause deletion (the default) reads uninitialised memory |
+| `patch-3.diff` | every UNSAT answer calls `back()` on an empty list |
+| `patch-4.diff` | an assertion dereferences a null pointer with `-no-lgj` |
+| `patch-5.diff` | Gauss elimination (`-il`) never reads the first matrix row |
+| `patch-6.diff` | the parser splits on spaces only: wrong answer on tabs, CRLF rejected |
+| `patch-7.diff` | a late equivalence overwrites an existing one |
+| `patch-8.diff` | the empty XOR line `x 0` overflows the heap |
+| `patch-9.diff` | an assertion fails with `-rh lbd` when a learnt clause has LBD 0 |

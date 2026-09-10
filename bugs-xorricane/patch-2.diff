@@ -1,0 +1,49 @@
+From 7f81f727adcbcd9cdad34af4c225156d6c2f7ae0 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 22:56:16 +0200
+Subject: [PATCH] Fix uninitialised accumulators in the 'avg_util' deletion
+ heuristic
+
+Bug: with -delh avg_util (the default), clause_cleaning() adds up clause
+utilities in 'double avg_util_tier[3]' without initialising it, so the
+per-tier averages -- and with them which clauses are moved to tier 2 or
+deleted -- depend on stack contents. It also divides by tier_count[t] when
+a tier is empty, which gives NaN (and under -ffast-math the comparisons
+against NaN are undefined).
+
+Fix: zero-initialise the array and skip the division for empty tiers.
+
+Found while fixing the out-of-bounds access in the 'util' heuristic next to
+it; it affects every run that reaches a clause-cleaning with the default
+options.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/solver.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/solver.cpp b/src/solver.cpp
+index 326e572..e002690 100644
+--- a/src/solver.cpp
++++ b/src/solver.cpp
+@@ -563,13 +563,13 @@ void solver::clause_cleaning(stats& s) {
+     if(opt.del == deletion_opt::avg_util) {
+         VERB(80, "c deletion heuristc: avg_util");
+         //compute average utilities in each tier:
+-        double avg_util_tier[3];
++        double avg_util_tier[3] = {0, 0, 0};
+         for(var_t i=0; i<xnf_clss.size(); ++i) {
+             avg_util_tier[tier[i]] += utility[i];
+         }
+-        avg_util_tier[0] /= tier_count[0];
+-        avg_util_tier[1] /= tier_count[1];
+-        avg_util_tier[2] /= tier_count[2];
++        for(var_t t=0; t<3; ++t) {
++            if(tier_count[t]>0) avg_util_tier[t] /= tier_count[t];
++        }
+         VERB(80, "c " << CYAN("avg util: tier0 " << std::to_string(avg_util_tier[0]) << " tier1 " << std::to_string(avg_util_tier[1]) << " tier2 " << std::to_string(avg_util_tier[2]) ) );
+ 
+         //@heuristic find better values!
+-- 
+2.55.0
+

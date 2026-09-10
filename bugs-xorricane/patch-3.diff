@@ -1,0 +1,38 @@
+From 3a2ecdc7dec51544fac8efb6da06a2d48ca21d25 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 22:56:16 +0200
+Subject: [PATCH] Fix back() on an empty solution list when printing UNSAT
+
+Bug: stats::print_sol() takes 'sols.back()' before checking that sols is
+non-empty, so every UNSATISFIABLE answer calls back() on an empty
+std::list. That is undefined behaviour; with _GLIBCXX_ASSERTIONS (the Debug
+build) it aborts with "Assertion '!this->empty()' failed" in
+stats::print_sol (src/misc.hpp:475), called from solve() in misc.cpp.
+
+Fix: take the reference inside the non-empty branch only.
+
+Found by differential fuzzing (xnf_fuzzer.py): any UNSAT instance run with
+a Debug build shows it.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/misc.hpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/misc.hpp b/src/misc.hpp
+index d5f7785..770575e 100644
+--- a/src/misc.hpp
++++ b/src/misc.hpp
+@@ -472,8 +472,8 @@ class stats {
+       auto str = sols.size()>1 ? ("Solution " + std::to_string(sols.size())) : "Solution";
+       if(verbose) {std::cout << "c " << std::endl; PRINT_SECTION_HEADER(str);}
+       if(finished) {
+-          const auto& sol = sols.back();
+           if(sols.size()>0) {
++            const auto& sol = sols.back();
+             std::cout << "s SATISFIABLE" << std::endl;
+             std::cout << "v";
+             unsigned int current_line_length = 1;
+-- 
+2.55.0
+

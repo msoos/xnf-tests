@@ -1,0 +1,81 @@
+From 8a3f82ec2b93184558ccb7ce9ec440989fcc8f54 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 22:56:16 +0200
+Subject: [PATCH] Fix out-of-bounds access in the 'util' clause-deletion
+ heuristic
+
+Bug: with -delh util, clause_cleaning() reads and writes past the end of
+lbd_count. Release builds segfault in most runs; debug builds abort with
+_GLIBCXX_ASSERTIONS "vector::operator[]: __n < this->size()" at
+src/solver.cpp:612 (e.g. __n=107), called from solver::restart().
+
+Cause: lbd_count is sized to 100 utility bins, but each tier-1/2 clause was
+counted at index LBD(alpha_dl) instead of at the bin_idx computed on the
+line above, so any clause with an LBD of 100 or more indexed out of bounds.
+Besides that, bin_idx is 100 for a clause with utility == max_util, the
+cutoff loop could walk past the last bin, the resulting bin count was
+compared against raw utilities, and max_util was never initialised.
+
+Fix: count each clause in its utility bin (101 bins, the last one for
+utility == max_util), bound the cutoff loop, convert the bin cutoff back to
+utility units (bins are max_util/100 wide), and initialise max_util to 0.
+
+Found by differential fuzzing (xnf_fuzzer.py). Reproducer, a 597-variable
+2-XNF instance that segfaults in most runs before the fix:
+  xorricane -dh swl -po save -rh lbd -delh util -il 1 -ip nbu -pp scc inst.xnf
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/solver.cpp | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/src/solver.cpp b/src/solver.cpp
+index a996af0..326e572 100644
+--- a/src/solver.cpp
++++ b/src/solver.cpp
+@@ -183,6 +183,7 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
+     //init utility and tier
+     utility = vec<double>(0);
+     utility.reserve(xnf_clss.size());
++    max_util = 0;
+     tier = vec<var_t>(0);
+     tier.reserve(xnf_clss.size());
+     tier_count[0] = 0;
+@@ -606,23 +607,26 @@ void solver::clause_cleaning(stats& s) {
+         double percentage[2] = {17.0/18, 3.0/8};
+         for(var_t t=0; t<=1; ++t) {
+             //compute bins of utility distribution; i.e. segment utilities into 100 bins of equal size; each has size max_util/100
+-            lbd_count.clear(); lbd_count.resize(100, 0);
++            //bin 100 holds the clauses with utility == max_util
++            lbd_count.clear(); lbd_count.resize(101, 0);
+             for(var_t idx=0; idx<xnf_clss.size(); ++idx) {
+-                const auto bin_idx = (int) (utility[idx]/max_util * 100);
+-                if(tier[idx] == t+1) ++lbd_count[ xnf_clss[idx].LBD(alpha_dl) ];
++                if(tier[idx] != t+1) continue;
++                const var_t bin_idx = max_util>0 ? std::min<var_t>(100, (var_t) (utility[idx]/max_util * 100)) : 0;
++                ++lbd_count[ bin_idx ];
+             }
+-            //add up 
++            //add up
+             var_t sum = 0;
+             var_t l = 0;
+-            while(sum < (double) tier_count[t+1] * percentage[t]) {
++            while(l < lbd_count.size() && sum < (double) tier_count[t+1] * percentage[t]) {
+                 sum += lbd_count[l];
+                 ++l;
+             }
+             util_cutoff[t] = l;
+         }
+-        
+-        const double util_cutoff_move   = util_cutoff[0];
+-        const double util_cutoff_delete = util_cutoff[1];
++
++        //util_cutoff is a number of bins, each of width max_util/100
++        const double util_cutoff_move   = util_cutoff[0] * max_util / 100;
++        const double util_cutoff_delete = util_cutoff[1] * max_util / 100;
+ 
+         VERB(80, "c " << CYAN("util cutoff: tier1->tier2 move " << std::to_string(util_cutoff_move) << " tier2 delete " << std::to_string(util_cutoff_delete) ) );
+ 
+-- 
+2.55.0
+

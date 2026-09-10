@@ -1,0 +1,54 @@
+From 0e18054a0f71bdc1276ac87b55adcc0416c897ac Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:22:15 +0200
+Subject: [PATCH] Fix the XNF parser splitting lines on spaces only
+
+Bug: parse_file() splits each line with split(line, " "), so any other
+whitespace ends up inside the tokens. With a tab, a valid instance gets a
+wrong answer:
+
+  p xnf 2 2
+  1<TAB>2 0
+  -1 0
+
+is SAT (x2 = 1), but "1\t2" is one token and stoi() reads it as 1, so the
+first clause becomes x1 and xorricane answers UNSATISFIABLE. With Windows
+line endings every clause ends in "0\r", which is not "0", so every CRLF
+file is rejected with "incorrectly terminated clause" and "s INDEFINITE".
+The guessing-path reader (-gp) had the same problem.
+
+Fix: split on spaces, tabs and carriage returns.
+
+Found with hand-written edge cases next to differential fuzzing
+(xnf_fuzzer.py). Xorcle and CryptoMiniSat read both files correctly.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/io.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/io.cpp b/src/io.cpp
+index 1da6f10..dd3030a 100644
+--- a/src/io.cpp
++++ b/src/io.cpp
+@@ -64,7 +64,7 @@ parsed_xnf parse_file(std::istream& file, bool verbose) {
+     while (std::getline(file, line)) {
+         if (line.length() == 0 || line[0] == 'c') continue; //ignore line
+ 
+-        auto words = split(line, " ");
++        auto words = split(line, " \t\r");
+         if (words[0] == "p") {
+             if(verbose) std::cout << "c found header: " << line << std::endl;
+             if (words[1] != "xnf") {
+@@ -199,7 +199,7 @@ guessing_path parse_gp(const std::string& fname, bool verbose) {
+         std::string line;
+         while (std::getline(file, line)) {
+             if (line.length() == 0 || line[0] == 'c') continue; //ignore line
+-            auto words = split(line, " ");
++            auto words = split(line, " \t\r");
+             const int val_ = stoi(words[0]);
+             const int val = std::abs(val_);
+             assert(val>0);
+-- 
+2.55.0
+

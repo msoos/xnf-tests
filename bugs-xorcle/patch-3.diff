@@ -1,0 +1,37 @@
+From e74f84bdb18b477a5e2281b9cf1ee36f26dca8b3 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:10:22 +0200
+Subject: [PATCH] check_drup_parity.py: accept the 'p xnf' header
+
+Bug: the proof checker rejects every input whose header is 'p xnf'
+("ValueError: Invalid header: p xnf 25 65"), although xorcle itself and the
+README accept both 'p cnf' and 'p xnf'. No proof for an XNF-headed input
+could be checked at all.
+
+Fix: accept 'xnf' as well as 'cnf' as the format token.
+
+Found when checking xorcle's DRUP(+) proofs on fuzzer instances
+(xnf_fuzzer.py generators): all 3000 were rejected before the fix, none
+after it.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ tools/check_drup_parity.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/check_drup_parity.py b/tools/check_drup_parity.py
+index aa22bfc..76c5db8 100644
+--- a/tools/check_drup_parity.py
++++ b/tools/check_drup_parity.py
+@@ -55,7 +55,7 @@ def parse_header(lines: List[str]) -> Tuple[int, int, int]:
+             continue
+         if stripped.startswith("p"):
+             parts = stripped.split()
+-            if len(parts) < 4 or parts[1] != "cnf":
++            if len(parts) < 4 or parts[1] not in ("cnf", "xnf"):
+                 raise ValueError(f"Invalid header: {stripped}")
+             try:
+                 nvars = int(parts[2])
+-- 
+2.55.0
+

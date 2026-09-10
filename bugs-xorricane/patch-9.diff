@@ -1,0 +1,46 @@
+From 05136c7e32923187b68e7a762eacf726e2601db7 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:22:50 +0200
+Subject: [PATCH] Fix assertion failure when the first learnt clauses have LBD
+ 0
+
+Bug: with -rh lbd, update_lbd_restart_vals() asserts that both moving
+averages of learnt-clause LBDs are positive. A clause learnt on decision
+level 0 has LBD 0, so when the first conflicts all happen there, both
+averages are still exactly 0 and Debug builds abort with
+
+  solver.hpp:1203: update_lbd_restart_vals: Assertion
+  `forcing_fast>0 && forcing_slow>0' failed.
+
+(at the very first conflict: lbd=0, s.no_confl=1). Release builds are not
+affected beyond not restarting until the first conflict above level 0.
+
+Fix: assert that the averages are non-negative.
+
+Found by differential fuzzing (xnf_fuzzer.py) with a sanitizer build, on a
+48-variable 2-XNF instance with
+  -dh vsids -po save_inv -rh lbd -delh util -il 0 -ip full -pp no -no-eq
+whose answer, UNSAT, the release build gets right.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/solver.hpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/solver.hpp b/src/solver.hpp
+index ec3ac12..1b14da4 100644
+--- a/src/solver.hpp
++++ b/src/solver.hpp
+@@ -1200,7 +1200,8 @@ class solver
+         blocking_mult = linear_smoothing * blocking_mult_high + (1-linear_smoothing) * blocking_mult_low;
+       }
+ 
+-      assert(forcing_fast>0 && forcing_slow>0);
++      //clauses learnt on dl 0 have LBD 0, so both averages stay 0 until the first conflict above dl 0
++      assert(forcing_fast>=0 && forcing_slow>=0);
+ 
+       VERB(60, "c lbd: " << std::to_string(lbd) << " forcing_fast: " << forcing_fast << " forcing_slow: " << forcing_slow << " blocking: " << blocking);
+     }
+-- 
+2.55.0
+

@@ -1,0 +1,52 @@
+From e866e6db88fcc10e9511e4d16584e6aabbc78ae4 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:22:15 +0200
+Subject: [PATCH] Fix an equivalence found on a lower dl overwriting an
+ existing one
+
+Bug: process_lineral() registers every active two-variable lineral as an
+equivalence of its leading variable, asserting that the variable does not
+have one already. That fails when the lineral is propagated late, on a lower
+decision level than the current one: its reduction on that level ignores
+the equivalences of higher levels, so the leading variable may already have
+one. Debug builds abort with
+
+  solver.hpp:908: process_lineral: Assertion `!equiv_lits[lt].is_active()' failed.
+
+e.g. while processing x20+x481+1 on dl 15 (current dl 16) when x20 = x513
+was recorded on dl 16. Release builds overwrite equiv_lits[20], which
+leaves equiv_lits[513].prev_ind pointing at x20 and lets the later
+backtrack from dl 16 clear the dl-15 entry.
+
+Fix: equiv_lits holds only one equivalence per variable, so if the leading
+variable already has one, handle the lineral as an ordinary unit. It is
+still watched, so no propagation is lost.
+
+Found by differential fuzzing (xnf_fuzzer.py) with a sanitizer build: it
+shows with -il 5 (Gauss-elimination in-processing), e.g. with default
+options plus -il 5 on a 799-variable 2-XNF instance. The release build gave
+the right answer on it (UNSAT, as CryptoMiniSat), before and after the fix.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/solver.hpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/solver.hpp b/src/solver.hpp
+index cd342ec..ec3ac12 100644
+--- a/src/solver.hpp
++++ b/src/solver.hpp
+@@ -900,7 +900,9 @@ class solver
+       }
+ 
+       if(l.is_active(alpha)) {
+-        if(opt.eq && l.is_equiv()) {
++        //an equiv found late, on a lower dl than the current one, may hit an LT that already has an equiv
++        //from a higher dl; equiv_lits holds only one per LT, so then treat l as a plain unit
++        if(opt.eq && l.is_equiv() && !equiv_lits[l.LT()].is_active()) {
+           //if l is equiv!
+           const var_t lt = l.LT();
+           const var_t lt_other = l.get_equiv_lit();
+-- 
+2.55.0
+

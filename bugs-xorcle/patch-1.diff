@@ -1,0 +1,46 @@
+From e0932c35b29208c2bf81f6001e339423655fff86 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:10:22 +0200
+Subject: [PATCH] Fix repeated variables in a lineral being OR-ed instead of
+ XOR-ed
+
+Bug: the XNF parser builds a lineral such as "1+1+2" by setting the bit of
+each variable it reads, so a repeated variable is kept instead of cancelled:
+"1+1+2" was read as x1+x2 rather than x2. That silently changes the formula
+and gives wrong answers. For example
+
+  p xnf 2 2
+  1+1+2 0
+  -2 0
+
+is UNSAT (the first clause is x2, the second is not-x2), but xorcle answered
+"s SATISFIABLE" with "v 1 -2 0", an assignment that falsifies the first
+clause. Xorricane and CryptoMiniSat both answer UNSAT.
+
+Fix: flip the variable's bit instead of setting it, so x + x = 0.
+
+Found with hand-written edge cases next to differential fuzzing
+(xnf_fuzzer.py), whose generator never repeats a variable in a lineral.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/io/DimacsParser.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/io/DimacsParser.cpp b/src/io/DimacsParser.cpp
+index 2d92e14..401b36c 100644
+--- a/src/io/DimacsParser.cpp
++++ b/src/io/DimacsParser.cpp
+@@ -113,7 +113,8 @@ algebra::Equation parse_clause_token(const std::string& token, std::size_t num_v
+             throw std::runtime_error("Variable out of range: " + variable_token);
+         }
+ 
+-        equation.set(static_cast<std::size_t>(variable - 1));
++        // flip, not set: a repeated variable cancels (x + x = 0)
++        equation.flip(static_cast<std::size_t>(variable - 1));
+ 
+         if (plus_pos == std::string::npos) {
+             break;
+-- 
+2.55.0
+

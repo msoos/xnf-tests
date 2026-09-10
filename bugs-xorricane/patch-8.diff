@@ -1,0 +1,54 @@
+From 21dfce9ca7e85a34a18b5b5fadcb65ede3941018 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:22:41 +0200
+Subject: [PATCH] Fix heap overflow on an empty XOR line
+
+Bug: a CNF-XOR line with no literals, "x 0", is the empty XOR, i.e. the
+false constraint 0 = 1, so the formula is UNSAT. parse_file() converts
+x-lines by std::accumulate over words[2 .. size-2] starting from words[1];
+with only "x" and "0" that range starts past its end. The sanitizer build
+reports a heap-buffer-overflow; the release build throws std::bad_alloc and
+answers "s INDEFINITE". Reproducer:
+
+  p cnf 2 2
+  x 0
+  1 2 0
+
+Fix: turn a literal-less x-line into the empty clause, the same path a line
+consisting of "0" takes.
+
+Found with hand-written edge cases next to differential fuzzing
+(xnf_fuzzer.py).
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/io.cpp | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/src/io.cpp b/src/io.cpp
+index dd3030a..977cd1d 100644
+--- a/src/io.cpp
++++ b/src/io.cpp
+@@ -83,10 +83,15 @@ parsed_xnf parse_file(std::istream& file, bool verbose) {
+             
+             //check if clause is in XOR-clause notation or XNF-notation!
+             if(words[0] == "x") {
+-                //convert to XNF-notation:
+-                words[0] = std::accumulate( std::next(words.begin(),2), std::prev(words.end()), words[1], [](std::string a, std::string b) { return a + "+" + b; });
+-                words[1] = "0";
+-                words.resize(2);
++                if(words.size() == 2) {
++                    //'x 0' is the empty XOR, i.e., 0 = 1: the empty clause
++                    words.resize(1);
++                } else {
++                    //convert to XNF-notation:
++                    words[0] = std::accumulate( std::next(words.begin(),2), std::prev(words.end()), words[1], [](std::string a, std::string b) { return a + "+" + b; });
++                    words[1] = "0";
++                    words.resize(2);
++                }
+             }
+ 
+             //parse linerals -- if there is none, we have an empty clause!
+-- 
+2.55.0
+

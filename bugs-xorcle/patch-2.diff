@@ -1,0 +1,52 @@
+From d4d2f41378af586d02a51ce8a97f34df15d75b55 Mon Sep 17 00:00:00 2001
+From: Mate Soos <soos.mate@gmail.com>
+Date: Thu, 10 Sep 2026 23:10:22 +0200
+Subject: [PATCH] Fix crash on an empty input clause
+
+Bug: a clause line consisting only of "0" is the empty clause, so the
+formula is trivially UNSAT, but xorcle crashes on it: the release build
+segfaults, the debug build fails "Assertion `clause.rows() >= 1'" in
+PropagationEngine::unit_prop_one_clause (src/search/PropagationEngine.cpp:33).
+Propagation assumes every clause has at least one row. Reproducer:
+
+  p xnf 2 2
+  1 2 0
+  0
+
+Fix: solve() looks for an empty input clause before propagating and returns
+UNSAT right away. With a proof requested it logs the empty clause with that
+input clause as its only reason, which tools/check_drup_parity.py accepts.
+
+Found with hand-written edge cases next to differential fuzzing
+(xnf_fuzzer.py).
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ src/search/Solver.cpp | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/src/search/Solver.cpp b/src/search/Solver.cpp
+index bc255c2..0a8f4ad 100644
+--- a/src/search/Solver.cpp
++++ b/src/search/Solver.cpp
+@@ -367,6 +367,17 @@ void Solver::make_decision_step() {
+ Result Solver::solve() {
+     next_proof_clause_id = std::max(next_proof_clause_id, clause_sel->get_num_clauses());
+ 
++    // propagation assumes every clause has a row, so an empty input clause must be caught here
++    const std::vector<algebra::Clause>& clauses = get_clauses();
++    for (heuristics::ClauseId id = 0; id < clauses.size(); ++id) {
++        if (clauses[id].rows() == 0) {
++            if (proof_logger) {
++                proof_logger->log_empty_clause(next_proof_clause_id++, {id});
++            }
++            return ResultCase::Unsat {};
++        }
++    }
++
+     while (true) {
+         if (propagate_until_conflict()) {
+             ++num_conflicts;
+-- 
+2.55.0
+
