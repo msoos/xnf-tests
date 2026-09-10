@@ -96,21 +96,44 @@ instead of 60/75.
 ### The improved CryptoMiniSat
 
 `cms-improved` is [`b79d6193a`](https://github.com/msoos/cryptominisat/commit/b79d6193a), 70
-commits on from the [`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) used
-for `cms`, and it is run with no options at all because
-[`4b82356e7`](https://github.com/msoos/cryptominisat/commit/4b82356e7) made the defaults what this
-repository needed, i.e. to what's above, also fixing the autodisable switch,
-and startup simplification became the binary's default. Gauss-Jordan itself was
-then made cheaper: O(1) watch deletion instead of a watchlist scan, the XOR
-reason matrix kept as a bitset and only under FRAT, redundant full-width row
-scans dropped from propagation, and only the D half of the [I|D] matrix stored.
-Most of the rest is CaDiCaL's search brought across: its restart scheme,
-learnt-clause database reduction, vivification (schedule,
-subsume-during-vivify, instantiation), rephasing, lucky phases and phase-tied
-branching — alongside all-UIP shrinking, on-the-fly strengthening, reason-side
-bumping and trail reuse on backjump and restart. The CCNR local search was
-replaced by xnfSAT, which can use the XOR structure, so switching local search
-off is no longer necessary either.
+commits after the [`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) used for
+`cms`. It runs with no options, as
+[`4b82356e7`](https://github.com/msoos/cryptominisat/commit/4b82356e7) made the settings above its
+defaults. Beyond that, Gauss-Jordan elimination was made cheaper, much of CaDiCaL's search was
+brought across, and local search was replaced by xnfSAT, which uses the XOR structure.
+
+## XNF solver bugs found by fuzzing {#bugs}
+
+We wrote `xnf_fuzzer.py`, which extends CryptoMiniSat's CNF fuzzers, among them Brummayer's
+FuzzSAT (Brummayer, Lonsing and Biere, SAT 2010), to XNF and 2-XNF. Each instance goes to Xorcle
+(and Xorricane on 2-XNF) and, as CNF-XOR, to CryptoMiniSat: SAT answers are checked by
+substitution, UNSAT ones by CryptoMiniSat's proof in `cake_xlrup`. We also fuzzed UBSan and
+ASan builds of both solvers, and tried a few hand-written edge cases. CryptoMiniSat, which its
+own extensive fuzzing infrastructure tests regularly, gave no wrong answers. Each bug's fix is
+one patch, whose commit message is the bug report.
+
+### Xorcle: `bugs-xorcle/`
+
+| Patch | Bug |
+|---|---|
+| `patch-1.diff` | a repeated variable in a lineral is OR-ed, not XOR-ed: wrong answers |
+| `patch-2.diff` | an empty input clause segfaults instead of giving UNSAT |
+| `patch-3.diff` | the proof checker rejects the `p xnf` header |
+| `patch-4.diff` | the proof checker has the same OR/XOR parsing bug |
+
+### Xorricane: `bugs-xorricane/`
+
+| Patch | Bug |
+|---|---|
+| `patch-1.diff` | `util` clause deletion writes out of bounds: segfault |
+| `patch-2.diff` | `avg_util` clause deletion (the default) reads uninitialised memory |
+| `patch-3.diff` | every UNSAT answer calls `back()` on an empty list |
+| `patch-4.diff` | an assertion dereferences a null pointer with `-no-lgj` |
+| `patch-5.diff` | Gauss elimination (`-il`) never reads the first matrix row |
+| `patch-6.diff` | the parser splits on spaces only: wrong answer on tabs, CRLF rejected |
+| `patch-7.diff` | a late equivalence overwrites an existing one |
+| `patch-8.diff` | the empty XOR line `x 0` overflows the heap |
+| `patch-9.diff` | an assertion fails with `-rh lbd` when a learnt clause has LBD 0 |
 
 ## Benchmarks {#benchmarks}
 
@@ -185,32 +208,3 @@ against 6.5 GB for CryptoMiniSat and 1.8 GB for Xorricane — and eight of its r
 concentrated in lifted pebbling (2.1 GB average, 9.9 GB peak), where it limits how many
 Xorcle runs can be scheduled in parallel, a practical cost the solved counts do not show.
 :::
-
-## Solver bugs found by fuzzing {#bugs}
-
-`xnf_fuzzer.py` fuzzes both solvers against CryptoMiniSat, checking SAT answers by
-substitution and UNSAT answers with `cake_xlrup`. Each bug found has a fix in its own patch,
-whose commit message is the bug report.
-
-### Xorcle: `bugs-xorcle/`
-
-| Patch | Bug |
-|---|---|
-| `patch-1.diff` | a repeated variable in a lineral is OR-ed, not XOR-ed: wrong answers |
-| `patch-2.diff` | an empty input clause segfaults instead of giving UNSAT |
-| `patch-3.diff` | the proof checker rejects the `p xnf` header |
-| `patch-4.diff` | the proof checker has the same OR/XOR parsing bug |
-
-### Xorricane: `bugs-xorricane/`
-
-| Patch | Bug |
-|---|---|
-| `patch-1.diff` | `util` clause deletion writes out of bounds: segfault |
-| `patch-2.diff` | `avg_util` clause deletion (the default) reads uninitialised memory |
-| `patch-3.diff` | every UNSAT answer calls `back()` on an empty list |
-| `patch-4.diff` | an assertion dereferences a null pointer with `-no-lgj` |
-| `patch-5.diff` | Gauss elimination (`-il`) never reads the first matrix row |
-| `patch-6.diff` | the parser splits on spaces only: wrong answer on tabs, CRLF rejected |
-| `patch-7.diff` | a late equivalence overwrites an existing one |
-| `patch-8.diff` | the empty XOR line `x 0` overflows the heap |
-| `patch-9.diff` | an assertion fails with `-rh lbd` when a learnt clause has LBD 0 |
