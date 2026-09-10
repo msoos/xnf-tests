@@ -279,8 +279,7 @@ statistics, Gauss-Jordan matrix dimensions, restart behaviour.
 | `convert_all.py` | batch wrapper around Xorcle's own converter |
 | `check_runs.py` | summarise outcomes across all logs and flag memory-outs |
 | `verify_sat.py` | check every `SATISFIABLE` answer against its instance |
-| `xnf_fuzzer.py` | fuzz Xorcle (XNF, 2-XNF) and Xorricane (2-XNF) against CryptoMiniSat; UNSAT via `cake_xlrup` |
-| `backup.sh` | copy just the logs into `backup/`, preserving paths |
+| `xnf_fuzzer.py` | fuzz Xorcle (XNF, 2-XNF) and Xorricane (2-XNF) against CMS; UNSAT via `cake_xlrup` |
 
 The report's own sources are `report.md` (prose), `report.css` (styling) and
 `template.html` (page skeleton); see [The report](#the-report).
