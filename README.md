@@ -221,6 +221,18 @@ newer build becomes a series of its own and the older logs stay in the report be
 Every `SATISFIABLE` answer is checked against the file the solver was given
 using `verify_sat.py`. It can verify all solutions except that of Bosphorus.
 
+## The raw logs
+
+Every run's output is committed as `logs.tar.xz` — 15060 files, 513 MB of text compressed to
+26 MB. It holds a `.out-<solver>` (the solver's own output) and a `.timeout-<solver>`
+(`/usr/bin/time -v`: wall clock, CPU time, peak RSS, exit status) for each solver-instance
+pair.
+
+`data.sqlite` is committed too, so the plots and the report can be rebuilt without running a
+single solver — clone, then run the three commands under [The report](#the-report). The logs
+are there for anything the database does not capture: conflict counts, XOR recovery
+statistics, Gauss-Jordan matrix dimensions, restart behaviour.
+
 ## The report
 
 ```bash
@@ -253,22 +265,6 @@ URIs, so the result is still one file with no external references. Styling lives
 ```bash
 sudo apt install pandoc python3-yaml   # or: pip install pyyaml
 ```
-
-## The raw logs
-
-Every run's output is committed as `logs.tar.xz` — 15060 files, 513 MB of text compressed to
-26 MB. It holds a `.out-<solver>` (the solver's own output) and a `.timeout-<solver>`
-(`/usr/bin/time -v`: wall clock, CPU time, peak RSS, exit status) for each solver-instance
-pair, in the same directory layout the benchmarks use:
-
-```bash
-mkdir -p backup && tar -xf logs.tar.xz -C backup
-```
-
-`data.sqlite` is committed too, so the plots and the report can be rebuilt without running a
-single solver — clone, then run the three commands under [The report](#the-report). The logs
-are there for anything the database does not capture: conflict counts, XOR recovery
-statistics, Gauss-Jordan matrix dimensions, restart behaviour.
 
 ## The other scripts
 
