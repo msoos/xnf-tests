@@ -17,6 +17,7 @@ PICS = "pics"
 SRC = "report.md"
 CSS = "report.css"
 TEMPLATE = "template.html"
+FILTER = "anchors.lua"
 OUT = "report.html"
 
 SOLVERS = {
@@ -171,7 +172,7 @@ def main():
     args = ap.parse_args()
 
     for path, hint in [(DB, "./get_data_to_sqlite.py"), (PICS, "./create_graphs.py"),
-                       (args.input, None), (CSS, None), (TEMPLATE, None)]:
+                       (args.input, None), (CSS, None), (TEMPLATE, None), (FILTER, None)]:
         if not os.path.exists(path):
             raise SystemExit(f"{path} not found" + (f" -- run {hint}" if hint else ""))
 
@@ -213,7 +214,7 @@ def main():
     proc = subprocess.run(
         ["pandoc", "--from", "markdown", "--to", "html5", "--standalone",
          "--embed-resources", "--toc", "--toc-depth=2",
-         "--template", TEMPLATE, "--css", CSS,
+         "--template", TEMPLATE, "--css", CSS, "--lua-filter", FILTER,
          "--metadata", f"subtitle={subtitle}",
          "--output", args.output, "-"],
         input=md, text=True)

@@ -278,4 +278,4 @@ sudo apt install pandoc python3-yaml   # or: pip install pyyaml
 | `xnf_fuzzer.py` | fuzz Xorcle (XNF, 2-XNF) and Xorricane (2-XNF) against CMS; UNSAT via `cake_xlrup` |
 
 The report's own sources are `report.md` (prose), `report.css` (styling) and
-`template.html` (page skeleton); see [The report](#the-report).
+`template.html` (page skeleton), plus `anchors.lua` (heading links); see [The report](#the-report).

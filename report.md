@@ -70,7 +70,7 @@ constraints); Bosphorus combines algebraic and logical reasoning over ANF.
 {{solver_table}}
 :::
 
-### What CryptoMiniSat needed
+### What CryptoMiniSat needed {#cms-needed}
 
 CryptoMiniSat's defaults are tuned for general CNF, and on these families they discard
 almost all of the linear structure before search begins: `--maxnummatrices` defaults to 5
@@ -93,7 +93,7 @@ constraint of degree exactly k, and the compile-time ceiling of 8 put k = 9 and 
 of reach at any runtime setting. With it raised, CryptoMiniSat solves 75/75 of that family
 instead of 60/75.
 
-### The improved CryptoMiniSat
+### The improved CryptoMiniSat {#cms-improved}
 
 `cms-improved` is [`b79d6193a`](https://github.com/msoos/cryptominisat/commit/b79d6193a), 70
 commits after the [`3970aaf24`](https://github.com/msoos/cryptominisat/commit/3970aaf24) used for
@@ -112,7 +112,7 @@ ASan builds of both solvers, and tried a few hand-written edge cases. CryptoMini
 own extensive fuzzing infrastructure tests regularly, gave no wrong answers. Each bug's fix is
 one patch, whose commit message is the bug report.
 
-### Xorcle: `bugs-xorcle/`
+### Xorcle: `bugs-xorcle/` {#bugs-xorcle}
 
 | Patch | Bug |
 |---|---|
@@ -121,7 +121,7 @@ one patch, whose commit message is the bug report.
 | [`patch-3.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-3.diff) | the proof checker rejects the `p xnf` header |
 | [`patch-4.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-4.diff) | the proof checker has the same OR/XOR parsing bug |
 
-### Xorricane: `bugs-xorricane/`
+### Xorricane: `bugs-xorricane/` {#bugs-xorricane}
 
 | Patch | Bug |
 |---|---|

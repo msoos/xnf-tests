@@ -9,6 +9,11 @@ body{margin:0;background:var(--bg);color:var(--fg);
 h1{font-size:2rem;margin:0 0 .3rem}
 h2{font-size:1.4rem;margin:3rem 0 1rem;padding-bottom:.3rem;border-bottom:2px solid var(--line)}
 h3{font-size:1.1rem;margin:2rem 0 .5rem}
+h2,h3{scroll-margin-top:1rem}
+.anchor{margin-left:.4rem;color:var(--muted);text-decoration:none;opacity:0}
+.anchor::before{content:"#"}
+h2:hover .anchor,h3:hover .anchor,.anchor:focus{opacity:1}
+@media(hover:none){.anchor{opacity:.5}}
 a{color:var(--accent)}
 .sub{color:var(--muted);margin:0 0 2rem}
 code{background:var(--code);padding:.1em .35em;border-radius:3px;font-size:.88em}
