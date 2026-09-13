@@ -196,7 +196,7 @@ CMS_PARAMS="--sls 0 --autodisablegauss 0 --presimp 1 --maxmatrixrows 100000 \
 ./run_all_cms.py       -t 180              2xnf_sat_solving/benchmark/rand     --tag cms-improved
 ./run_all_cms.py       -t 180 --ext .cnf   xorricane-bench                     --tag cms-improved
 
-# run other tols
+# run other tools
 ./run_all_xorcle.py    -t 180 --ext .cnf   xorcle/tests/generated
 ./run_all_xorcle.py    -t 180 --ext .xnf   2xnf_sat_solving/benchmark/ascon
 ./run_all_xorcle.py    -t 180 --ext .xnf   2xnf_sat_solving/benchmark/rand
@@ -224,7 +224,7 @@ Every run's output is committed as `logs.tar.xz` — 15060 files, 513 MB of text
 pair.
 
 `data.sqlite` is committed too, so the plots and the report can be rebuilt without running a
-single solver — clone, then run the three commands under [The report](#the-report). The logs
+single solver — clone, then run the three commands under [Generating the Report](#generating-the-report). The logs
 are there for anything the database does not capture: conflict counts, XOR recovery
 statistics, Gauss-Jordan matrix dimensions, restart behaviour.
 

@@ -6,7 +6,8 @@ families:
     desc: >-
       Unsatisfiable parity formulas on random k-regular n-vertex graphs, generated with
       `cnfgen`. Grid: (20,k) for k=3..10 and (n,4) for n=10,20,...,1280, five graphs each.
-      Provably hard for Resolution; the headline family of the Xorcle paper.
+      Provably hard for Resolution; the headline family of the Xorcle paper. Given to every
+      solver as CNF, as in that paper.
   pebbling_lifted_h_k:
     label: Pebbling formulas lifted by k-XORs
     desc: >-
@@ -62,7 +63,8 @@ families:
 
 ## Solvers {#solvers}
 
-Four solvers, each given the encoding it is designed for. CryptoMiniSat is a CNF-XOR
+Four solvers, each given the encoding it is designed for (Tseitin excepted, which is CNF
+for all of them). CryptoMiniSat is a CNF-XOR
 CDCL solver; Xorcle and Xorricane are XNF CDCL solvers (disjunctions of parity
 constraints); Bosphorus combines algebraic and logical reasoning over ANF.
 
@@ -102,38 +104,41 @@ commits after the [`3970aaf24`](https://github.com/msoos/cryptominisat/commit/39
 defaults. Beyond that, Gauss-Jordan elimination was made cheaper, much of CaDiCaL's search was
 brought across, and local search was replaced by xnfSAT, which uses the XOR structure.
 
-## XNF solver bugs found by fuzzing {#bugs}
+## Bugs found in the XNF solvers {#bugs}
 
 We wrote `xnf_fuzzer.py`, which extends CryptoMiniSat's CNF fuzzers, among them Brummayer's
 FuzzSAT (Brummayer, Lonsing and Biere, SAT 2010), to XNF and 2-XNF. Each instance goes to Xorcle
 (and Xorricane on 2-XNF) and, as CNF-XOR, to CryptoMiniSat: SAT answers are checked by
 substitution, UNSAT ones by CryptoMiniSat's proof in `cake_xlrup`. We also fuzzed UBSan and
-ASan builds of both solvers, and tried a few hand-written edge cases. CryptoMiniSat, which its
-own extensive fuzzing infrastructure tests regularly, gave no wrong answers. Each bug's fix is
-one patch, whose commit message is the bug report.
+ASan builds of both solvers, and tried a few hand-written edge cases. Most of what turned up
+is minor: crashes on degenerate inputs, assertions that only fire in Debug builds, and issues
+behind non-default options. Two change the answer, both on unusual input: a variable repeated
+inside a lineral, and tab-separated input. CryptoMiniSat gave no wrong answers on the same
+instances; its own problems in this regime, listed [above](#cms-needed), were a crash and a
+slowdown with many matrices. Each fix is one patch, whose commit message is the bug report.
 
 ### Xorcle: `bugs-xorcle/` {#bugs-xorcle}
 
-| Patch | Bug |
-|---|---|
-| [`patch-1.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-1.diff) | a repeated variable in a lineral is OR-ed, not XOR-ed: wrong answers |
-| [`patch-2.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-2.diff) | an empty input clause segfaults instead of giving UNSAT |
-| [`patch-3.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-3.diff) | the proof checker rejects the `p xnf` header |
-| [`patch-4.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-4.diff) | the proof checker has the same OR/XOR parsing bug |
+| Patch | Bug | Impact |
+|---|---|---|
+| [`patch-1.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-1.diff) | a repeated variable in a lineral is OR-ed, not XOR-ed | wrong answer, on inputs that repeat a variable |
+| [`patch-2.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-2.diff) | an empty input clause segfaults instead of giving UNSAT | crash on a degenerate input |
+| [`patch-3.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-3.diff) | the proof checker rejects the `p xnf` header | proof checker script only |
+| [`patch-4.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorcle/patch-4.diff) | the proof checker has the same OR/XOR parsing bug | proof checker script only |
 
 ### Xorricane: `bugs-xorricane/` {#bugs-xorricane}
 
-| Patch | Bug |
-|---|---|
-| [`patch-1.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-1.diff) | `util` clause deletion writes out of bounds: segfault |
-| [`patch-2.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-2.diff) | `avg_util` clause deletion (the default) reads uninitialised memory |
-| [`patch-3.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-3.diff) | every UNSAT answer calls `back()` on an empty list |
-| [`patch-4.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-4.diff) | an assertion dereferences a null pointer with `-no-lgj` |
-| [`patch-5.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-5.diff) | Gauss elimination (`-il`) never reads the first matrix row |
-| [`patch-6.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-6.diff) | the parser splits on spaces only: wrong answer on tabs, CRLF rejected |
-| [`patch-7.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-7.diff) | a late equivalence overwrites an existing one |
-| [`patch-8.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-8.diff) | the empty XOR line `x 0` overflows the heap |
-| [`patch-9.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-9.diff) | an assertion fails with `-rh lbd` when a learnt clause has LBD 0 |
+| Patch | Bug | Impact |
+|---|---|---|
+| [`patch-1.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-1.diff) | `util` clause deletion writes out of bounds: segfault | crash, non-default `-delh util` only |
+| [`patch-2.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-2.diff) | `avg_util` clause deletion (the default) reads uninitialised memory | undefined behaviour; no wrong answer seen |
+| [`patch-3.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-3.diff) | every UNSAT answer calls `back()` on an empty list | undefined behaviour; aborts in Debug builds only |
+| [`patch-4.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-4.diff) | an assertion dereferences a null pointer with `-no-lgj` | Debug builds with `-no-lgj` only |
+| [`patch-5.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-5.diff) | Gauss elimination (`-il`) never reads the first matrix row | missed propagations; same answers |
+| [`patch-6.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-6.diff) | the parser splits on spaces only: wrong answer on tabs, CRLF rejected | wrong answer on tab-separated input |
+| [`patch-7.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-7.diff) | a late equivalence overwrites an existing one | assertion in Debug builds; release answer correct |
+| [`patch-8.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-8.diff) | the empty XOR line `x 0` overflows the heap | crash on a degenerate input |
+| [`patch-9.diff`](https://github.com/msoos/xnf-tests/blob/main/bugs-xorricane/patch-9.diff) | an assertion fails with `-rh lbd` when a learnt clause has LBD 0 | Debug builds only; release answer correct |
 
 ## Benchmarks {#benchmarks}
 
@@ -166,12 +171,11 @@ instances of the solve time, with unsolved instances charged twice the timeout. 
 better. The *attempted* column makes the denominator explicit, since not every solver ran
 on every family.
 
-CDF of solving time over all families. Bosphorus is excluded here because it was not run
-on every family — only on the Ascon and Xorricane-paper suites — as is the
-XOR-detection-off CryptoMiniSat configuration, which ran only on Bivium. CryptoMiniSat
-appears twice: it was run on both a CNF-XOR and a plain CNF encoding of six families, so
-each line takes that encoding where it exists and the family's only encoding elsewhere.
-Both cover all {{total_instances}} instances.
+CDF of solving time over all families. Bosphorus is excluded here because it was only run
+on the Ascon and Xorricane-paper suites. CryptoMiniSat appears twice: `cms` is the older
+build with the options [above](#cms-needed), `cms-improved` the newer build with none. Where
+`cms` was also run on a CNF-XOR encoding (Type I quadratic systems), this plot uses its plain
+CNF run. Every line covers all {{total_instances}} instances.
 
 ![](pics/cdf_all.svg)
 
@@ -189,22 +193,20 @@ Both cover all {{total_instances}} instances.
 **CryptoMiniSat XOR size limit.** With the default `--maxxorsize 7`, every Tseitin
 instance with k ≥ 8 times out while every k ≤ 7 instance solves in 0.0 s — the parity
 constraints have degree exactly k, so at k=8 none are recovered and the solver is left
-doing pure resolution.
+doing pure resolution. The Xorcle paper points this limit out as well.
 :::
 
 ::: note
-**Bivium CNF-XOR encoding.** CryptoMiniSat solves 1/50 on the shipped `.xcnf` but 34/50 on
-the plain `.cnf`. This is not an encoding-class effect: the CNF-XOR files were produced by
-re-translating from XNF, which inherits the XNF's wide linerals and leaves the XOR system
-far denser than the one CryptoMiniSat recovers for itself. See [Why CryptoMiniSat does
-best on the plain CNF](#encodings). For this family the `.cnf` column is the meaningful
-one.
+**Bivium encoding.** On the Xorricane suites CryptoMiniSat is given the plain `.cnf`, not
+the shipped `.xcnf`, and this choice favours it: on Bivium it solves 34/50 from the `.cnf`
+but only 1/50 from the `.xcnf`. The CNF-XOR files are translated from the XNF and keep its
+wide linerals, which gives a much denser XOR system than the one CryptoMiniSat recovers
+from the CNF itself.
 :::
 
 ::: note
-**Xorcle memory use.** Xorcle has the highest peak memory of any solver here — 9.9 GB,
-against 6.5 GB for CryptoMiniSat and 1.8 GB for Xorricane — and eight of its runs exceeded
-4 GB, versus three for CryptoMiniSat and none for any other solver. The pressure is
-concentrated in lifted pebbling (2.1 GB average, 9.9 GB peak), where it limits how many
-Xorcle runs can be scheduled in parallel, a practical cost the solved counts do not show.
+**Memory on lifted pebbling.** With over ten thousand matrices or parity constraints per
+instance, lifted pebbling is the memory-heavy family: peak RSS is 11.6 GB for `cms-improved`,
+9.9 GB for Xorcle and 6.5 GB for `cms`, while Xorricane stays under 1 GB. This limits how many
+runs can be scheduled in parallel, a practical cost the solved counts do not show.
 :::
