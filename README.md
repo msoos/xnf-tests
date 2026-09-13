@@ -216,11 +216,6 @@ Each run writes a `.out-<tag>` and a
 defaults to the solver's name; `run_all_cms.py` and `run_all_xorcle.py` take `--tag`, so a
 newer build becomes a series of its own and the older logs stay in the report beside it.
 
-## Verifying the answers
-
-Every `SATISFIABLE` answer is checked against the file the solver was given
-using `verify_sat.py`. It can verify all solutions except that of Bosphorus.
-
 ## The raw logs
 
 Every run's output is committed as `logs.tar.xz` — 15060 files, 513 MB of text compressed to
@@ -233,7 +228,7 @@ single solver — clone, then run the three commands under [The report](#the-rep
 are there for anything the database does not capture: conflict counts, XOR recovery
 statistics, Gauss-Jordan matrix dimensions, restart behaviour.
 
-## The report
+## Generating the Report
 
 ```bash
 ./get_data_to_sqlite.py
@@ -245,37 +240,3 @@ statistics, Gauss-Jordan matrix dimensions, restart behaviour.
 pair with wall clock, CPU time, peak RSS, exit status and result. `create_graphs.py` writes
 CDF plots and PAR2 tables into `pics/` as PNG, PDF and SVG, alongside the CSV data behind
 each curve. `make_report.py` then renders **`report.html`**, a single self-contained page.
-
-The report's text is **`report.md`**, ordinary Markdown — edit that, not the Python. It
-holds every word of prose plus the per-family labels and descriptions in its YAML header,
-and `make_report.py` only fills in the parts that come from the database:
-
-| Placeholder | Expands to |
-|:-------------------|:--------------------------------------------------|
-| `{{solver_table}}` | solver, git SHA, input format, command line |
-| `{{family_table}}` | family, instance count, timeout, description |
-| `{{par2 NAME}}` | the PAR2 table from `pics/NAME_par2.csv` |
-| `{{per_family}}` | a heading, plot and PAR2 table for every family |
-| `{{total_instances}}` | the distinct instance count |
-
-Plots are ordinary Markdown images (`![](pics/cdf_all.svg)`); pandoc inlines them as data
-URIs, so the result is still one file with no external references. Styling lives in
-`report.css` and the page skeleton in `template.html`. Needs `pandoc` and `python3-yaml`:
-
-```bash
-sudo apt install pandoc python3-yaml   # or: pip install pyyaml
-```
-
-## The other scripts
-
-| Script | Purpose |
-|---|---|
-| `xnf_to_xcnf.py` | XNF to CNF-XOR, in the Xorricane paper's encoding |
-| `xcnf_to_xnf.py` | CNF-XOR `x`-lines to XNF linerals, which Xorcle needs |
-| `convert_all.py` | batch wrapper around Xorcle's own converter |
-| `check_runs.py` | summarise outcomes across all logs and flag memory-outs |
-| `verify_sat.py` | check every `SATISFIABLE` answer against its instance |
-| `xnf_fuzzer.py` | fuzz Xorcle (XNF, 2-XNF) and Xorricane (2-XNF) against CMS; UNSAT via `cake_xlrup` |
-
-The report's own sources are `report.md` (prose), `report.css` (styling) and
-`template.html` (page skeleton), plus `anchors.lua` (heading links); see [The report](#the-report).
