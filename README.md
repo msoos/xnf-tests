@@ -1,6 +1,6 @@
 # Reproducing the XNF solver evaluations
 
-## The papers
+## The Papers
 
 | Paper | Authors | Venue / year | Solver | Code |
 |---|---|---|---|---|
@@ -9,7 +9,7 @@
 | [Extending CDCL to disjunctions of parity equations](https://arxiv.org/pdf/2605.15002) | Beame, Sun (U. Washington) | 2026 | Xorcle | [glenn-sun/xorcle](https://github.com/glenn-sun/xorcle) |
 
 
-## The solvers
+## The Solvers
 
 | Solver | Reads | Role |
 |---|---|---|
@@ -19,7 +19,7 @@
 | [Bosphorus](https://github.com/meelgroup/bosphorus) | ANF | algebraic (XL, ElimLin) plus logical reasoning |
 
 
-## CryptoMiniSat changes needed for these benchmarks
+## CryptoMiniSat Changes Needed for these Benchmarks
 
 CryptoMiniSat could not efficiently run some of these families. These changes were
 necessary for proper performance:
@@ -74,7 +74,7 @@ k = 9 and k = 10 unreachable at any setting. With the ceiling raised and `--maxx
 `$CMS_PARAMS`, CryptoMiniSat recovers 9- and 10-wide constraints and solves all 75 instances;
 before, it solved 60 and timed out on every k ≥ 8 instance.
 
-### Bosphorus changes needed for these benchmarks
+### Bosphorus Changes Needed for these Benchmarks
 
 Bosphorus uses CryptoMiniSat as a library rather than a binary, so none of the command-line
 options above reach it. It was given the same configuration through the API by
@@ -113,7 +113,7 @@ git submodule update --init --recursive
 The runner scripts look for each binary at its default in-tree location; pass
 `--cms`, `--xorcle`, `--xorricane` or `--bosphorus` to point elsewhere.
 
-## Getting the benchmarks
+## Getting the Benchmarks
 
 None of the instance files are committed — they are generated or downloaded from the
 original sources, as per the papers' definitions.
@@ -141,7 +141,7 @@ gh release download -R j-danner/Xorricane-paper -p '*.zip' -D xorricane-bench
 (cd xorricane-bench && for z in *.zip; do mkdir -p "${z%.zip}" && unzip -qn "$z" -d "${z%.zip}"; done)
 ```
 
-## Converting the encodings
+## Converting the Encodings
 
 Each solver is given the format it was designed for, and most suites already ship it.
 Two gaps have to be filled first:
@@ -164,7 +164,7 @@ pointed at one with `--ext`:
 | `.anf` | algebraic normal form | Bosphorus |
 
 
-## Running the solvers
+## Running the Solvers
 
 The two CryptoMiniSat series are two different builds of the solver, so the submodule has to
 be checked out at each revision in turn and rebuilt before its block is run:
@@ -216,7 +216,7 @@ Each run writes a `.out-<tag>` and a
 defaults to the solver's name; `run_all_cms.py` and `run_all_xorcle.py` take `--tag`, so a
 newer build becomes a series of its own and the older logs stay in the report beside it.
 
-## The raw logs
+## Logfiles
 
 Every run's output is committed as `logs.tar.xz` — 15060 files, 513 MB of text compressed to
 26 MB. It holds a `.out-<solver>` (the solver's own output) and a `.timeout-<solver>`
